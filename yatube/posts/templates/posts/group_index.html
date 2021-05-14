@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Подборки записей{% endblock %}
+{% block content %}
+  <div class="row justify-content-center">
+    <div class="col-md-12 p-5">
+      <div class="card">
+        <div class="card-header">Подборки записей</div>
+        <div class="card-body">
+          {% for group in groups %}
+            <p><b><a href="{% url 'group' slug=group.slug %}">{{ group.title }}</a></b></p>
+            <p>{{ group.description }}</p>
+            {% if not forloop.last %}
+              <hr>
+            {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %} 

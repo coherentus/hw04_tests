@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Последние обновления на сайте{% endblock %}
+{% block content %}
+  <div class="row justify-content-center">
+    <div class="col-md-12 p-5">
+      <div class="card">
+      <div class="card-header text-md-center">Последние обновления на сайте</div>
+        <div class="card-body">
+
+          {% for post in page %}
+            <div>
+              <h4>
+                Автор: 
+                {% spaceless %}
+                  <a href="{% url 'profile' post.author.username %}">
+                    <span>{{ post.author.get_full_name }}</span>
+                  </a>,
+                {% endspaceless %}
+                Дата публикации: {{ post.pub_date|date:"d M Y" }}
+                {% if post.group %}
+                  <span> - подборка</span>
+                  <a href="{% url 'group' slug=post.group.slug %}">
+                    {{ post.group.title }}
+                  </a>
+                {% endif %}
+              </h4>
+            </div>
+            <p>{{ post.text|linebreaksbr }}</p>
+            {% if not forloop.last %}
+              <hr>
+            {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %} 

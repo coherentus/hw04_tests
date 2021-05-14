@@ -1,3 +1,12 @@
+yatube/sent_emails/
+
+yatube/static/
+yatube/posts/static/
+.vscode/
+.vscode
+
+.ve.cmd
+ve.cmd
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -144,3 +153,12 @@ dmypy.json
 .history/
 
 .mypy_cache
+# Local History for Visual Studio Code
+.history/
+
+.mypy_cache
+yatube/db.sqlite3.back
+yatube/posts/templates/posts/Untitled-1.txt
+yatube/posts/templates/posts/post1.html
+yatube/posts/fixtures/test_data.json
+yatube/posts/fixtures/
