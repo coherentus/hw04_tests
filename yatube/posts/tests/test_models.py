@@ -10,29 +10,6 @@ User = get_user_model()
 
 class YaTbSmokeTst(TestCase):
 
-    def setUp(self):
-        # Устанавливаем данные для тестирования
-        # Создаём экземпляр клиента. Он неавторизован.
-        self.guest_client = Client()
-
-        self.test_user = User(
-            username='test_user',
-            first_name='first_test_name',
-            last_name='last_name_test',
-            email='test@yatube.ru'
-        )
-
-        self.test_group = Group(
-            title='test_group',
-            description='test_group_description',
-            slug=''
-        )
-
-        self.test_post = Post(
-            text='test post text for test __str__',
-            author=self.test_user
-        )
-
     def test_smoke(self):
         """'Дымовой тест. Проверка, что на запрос '/' ответ 200."""
         # Отправляем запрос через client,
@@ -59,6 +36,7 @@ class YaTbSmokeTst(TestCase):
 
 
 class YaTube_Test_Models(TestCase):
+    """Проверка моделей приложения posts"""
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -130,3 +108,6 @@ class YaTube_Test_Models(TestCase):
             with self.subTest(field=field):
                 self.assertEqual(
                     post._meta.get_field(field).verbose_name, expected_value)
+
+
+        
