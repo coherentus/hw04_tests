@@ -10,112 +10,270 @@ from posts.models import Group, Post
 User = get_user_model()
 
 
+class YaTb_test_views_context_without_form(TestCase):
+    """Проверка контекста, передаваемого из view в шаблоны
 
-
-class YaTbPaginationTests(TestCase):
+    name of view            верный контекст содержит
+    'index'             page: List[Post]
+    'group'             group: Grop, page: List[Post]
+    'profile'           profile_user: User, page: List[Post]
+    'group_index'       page: List[Group]
+    'post'              post: Post, author: Post.author
+    'new_post'          form: PostForm, edit_flag: bool
+    'post_edit'         form: PostForm, edit_flag: bool
+    Проверка правильности вызова шаблонов определена в test_urls
+    """
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.COUNT_ITEMS_FOR_PAGINATOR = 10
-        # Создаём записи в БД
-        # Групп больше на 3 чем количество объектов пагинатора на страницу
-        for i in range(1, int(cls.COUNT_ITEMS_FOR_PAGINATOR + 5)):
-            cls.group = Group.objects.create(
-                title='Тестовая подборка записей №' + str(i),
-                description='Тестирующая контекст подборка №' + str(i),
-                slug='test-slug' + str(i),
-            )
-            cls.group.save()
+        # тестовый юзер
+        cls.user_test = User.objects.create(
+            username='very_test_user'
+        )
+        
+        # тестовая группа
+        cls.group_test = Group.objects.create(
+            title='test_group_title',
+            description = 'test_description_for_test_group',
+            slug='test-slug'
+        )
 
-        # Постов больше на 3 чем количество объектов пагинатора на страницу
-        for i in range(1, int(cls.COUNT_ITEMS_FOR_PAGINATOR + 5)):
-            cls.test_post = Post.objects.create(
-                author=User.objects.create(username='Test_user' + str(i)),
-                text='Проверочный текст для поста проверки контекста' + str(i),
-            )
-            # каждый третий пост без группы
-            tmp_ind_div3 = (i + 2) % 3
-            if tmp_ind_div3:
-                group = Group.objects.get(id=tmp_ind_div3)
-                cls.test_post.group = group
-            cls.test_post.save()
+        # тестовый пост
+        cls.test_post = Post.objects.create(
+            author=cls.user_test,
+            text='test_post_text'
+        )
+        cls.test_post.save()
+        cls.group_test.save()
 
-        cls.post_count = Post.objects.all().count()
+        # неавторизованный клиент
+        cls.guest_client = Client()
 
     def setUp(self):
-        # Создаем неавторизованный клиент
-        self.guest_client = Client()
-        # Создаем пользователя
-        self.user = User.objects.create_user(username='CoherentuS')
-        # Создаем авторизованный клиент
-        self.authorized_client = Client()
-        self.authorized_client.force_login(self.user)
+        self.test_class = YaTb_test_views_context_without_form
 
-    # Проверка словаря контекста главной страницы
-    def test_index_page_shows_correct_context(self):
-        """Шаблон index сформирован с правильным контекстом.
-
-        Ожидаемый контекст должен содержать словарь page с кол-вом постов,
-        прописанным при конструировании paginator-а. Посты должны содержать
-        поля post.author post.text post.group . Показ всего содержимого
-        'index' не требует и не зависит от авторизации пользователя.
-        На метод "POST" не реагирует.
+    # страницы без форм, неавторизованный клиент
+    # name "index"   
+    def test_index_put_in_render_right_context(self):
+        """Проверка, что "index" выдаёт верный контекст в шаблон.
+        
+        Должно передаваться в шаблон page: List[Post]
         """
-        response = self.guest_client.get(reverse('index'))
-        posts_per_page = response.context.get('page').object_list
-        self.assertEqual(len(posts_per_page),
-                         YaTbPagesTests.COUNT_ITEMS_FOR_PAGINATOR,
-                         'Количество постов не равно пагинатору')
-        """Количество постов, выводимых на странице равно пагинатору"""
+        response = self.test_class.guest_client.get(reverse('index'))
+        # контекст содержит page
+        self.assertFalse(response.context['page'] is None,
+            'Из view "index" в шаблон не передаётся "page"'
+        )
+        # page содержит post, post содержит "text" "username" "pub_date"
+        first_object_post = response.context['page'][0]
+        post_text = first_object_post.text
+        post_author = first_object_post.author
+        post_pub_date = first_object_post.pub_date
+        self.assertFalse(post_text is None, 
+            'Первый объект "post" не содержит "text"'
+        )
+        self.assertEqual(post_text, self.test_class.test_post.text,
+            '"text" из первого "post" не равен "text" тестового поста'
+        )
+        self.assertFalse(post_author is None,
+            'Первый объект "post" не содержит "author"'
+        )
+        self.assertEqual(post_author, self.test_class.test_post.author,
+            '"author" из первого "post" не равен "author" тестового поста'
+        )
+        self.assertFalse(post_pub_date is None,
+            'Первый объект "post" не содержит "post_pub_date"'
+        )
+        self.assertEqual(post_pub_date, self.test_class.test_post.pub_date,
+            '"pub_date" из первого "post" не равен "pub_date" тестового поста'
+        )
 
-        for post in posts_per_page:            
-            self.assertTrue(hasattr(post, 'author') in response.context,
-                            'Нет post.author в context шаблона index')
-            self.assertTrue(hasattr(post, 'text') in response.context,
-                            'Нет post.author в context шаблона index')
-            self.assertTrue(hasattr(post, 'group') in response.context,
-                            'Нет post.author в context шаблона index')
-
-# Проверка словаря контекста страницы группы
-    def test_group_page_shows_correct_context(self):
-        """Шаблон group сформирован с правильным контекстом.
-
-        Ожидаемый контекст должен содержать словарь page с кол-вом постов,
-        прописанным при конструировании paginator-а. Посты должны содержать
-        поля post.author post.text post.group . Показ всего содержимого
-        'group' не требует и не зависит от авторизации пользователя.
-        На метод "POST" не реагирует.
+    # name "group"
+    def test_group_put_in_render_right_context(self):
+        """Проверка, что "group" выдаёт верный контекст в шаблон.
+        
+        Должно передаваться в шаблон group: Group, page: List[Post]
         """
-        # группа имеет slug. slug имеет вид slug='test-slug' + str(i),
-        # где 1 < i < int(cls.COUNT_ITEMS_FOR_PAGINATOR * 2.5 + 1),
-        # для COUNT_ITEMS_FOR_PAGINATOR == 10  i == 26
-        # тестовых групп int(cls.COUNT_ITEMS_FOR_PAGINATOR * 2.5 + 1)
-        # тестируем первую, последнюю и рандомную группу
-        first_slug = 'test-slug' + str(1)
-        last_i = int(YaTbPagesTests.COUNT_ITEMS_FOR_PAGINATOR * 2.5 + 1)
-        last_slug = 'test-slug' + str(last_i)
-        while True:
-            random_i = randint(1, last_i)
-            if random_i != 1 and random_i != last_i:
-                break
-        random_slug = 'test-slug' + str(random_i)
+        response = self.test_class.guest_client.get(
+            reverse('group',
+            kwargs={'slug': self.test_class.group_test.slug})
+        )
+        
+        # контекст содержит page
+        self.assertFalse(response.context['page'] is None,
+            'Из view "group" в шаблон не передаётся "page"'
+        )
+        # page содержит post, post содержит "text" "username" "pub_date"
+        first_object_post = response.context['page'][0]
+        post_text = first_object_post.text
+        post_author = first_object_post.author
+        post_pub_date = first_object_post.pub_date
+        self.assertFalse(post_text is None, 
+            'Первый объект "post" не содержит "text"'
+        )
+        self.assertEqual(post_text, self.test_class.test_post.text,
+            '"text" из первого "post" не равен "text" тестового поста'
+        )
+        self.assertFalse(post_author is None,
+            'Первый объект "post" не содержит "author"'
+        )
+        self.assertEqual(post_author, self.test_class.test_post.author,
+            '"author" из первого "post" не равен "author" тестового поста'
+        )
+        self.assertFalse(post_pub_date is None,
+            'Первый объект "post" не содержит "post_pub_date"'
+        )
+        self.assertEqual(post_pub_date, self.test_class.test_post.pub_date,
+            '"pub_date" из первого "post" не равен "pub_date" тестового поста'
+        )
+
+        # контекст содержит group
+        self.assertFalse(response.context['group'] is None,
+            'Из view "group" в шаблон не передаётся "group"'
+        )
+        object_group = response.context['group']
+        group_description = object_group.description
+        group_title = object_group.title
+        group_slug = object_group.slug
+        
+        # есть ли group.description, равен ли тестовому полю
+        self.assertFalse(group_description is None,
+            'Объект "group" не содержит "group.description"'
+        )
+        self.assertEqual(group_description,
+            self.test_class.group_test.description,
+            ('"group.description" из "group" не равен'
+             ' "group.description" тестовой группы')
+        )
+        # есть ли group.title, равен ли тестовому полю
+        self.assertFalse(group_title is None,
+            'Объект "group" не содержит "title"'
+        )
+        self.assertEqual(group_title,
+            self.test_class.group_test.title,
+            ('"group.title" из первого "group" не равен'
+             ' "group.title" тестовой группы')
+        )
+
+        # есть ли group.slug, равен ли тестовому полю
+        self.assertFalse(group_slug is None,
+            'Объект "group" не содержит "group.slug"'
+        )
+        self.assertEqual(group_title,
+            self.test_class.group_test.title,
+            ('"group.slug" из "group" не равен'
+             ' "group.slug" тестовой группы')
+        )
+
+    # name "profile"
+    def test_profile_put_in_render_right_context(self):
+        """Проверка, что "profile" выдаёт верный контекст в шаблон.
+        
+        Должно передаваться в шаблон profile_user: User, page: List[Post]
+        """
+        response = self.test_class.guest_client.get(
+            reverse('profile',
+            kwargs={'username': self.test_class.user_test.username})
+        )
+        
+        # контекст содержит profile_user
+        self.assertFalse(response.context['profile_user'] is None,
+            'Из view "profile" в шаблон не передаётся "profile_user"'
+        )
+        object_user = response.context['profile_user']
+        user_username = object_user.username
+
+        # есть ли user.username, равен ли тестовому полю
+        self.assertFalse(user_username is None,
+            'Объект "profile_user" не содержит "username"'
+        )
+        self.assertEqual(user_username,
+            self.test_class.user_test.username,
+            ('"username" из  "profile_user" не равен'
+             ' "username" тестового юзера')
+        )
+
+        # контекст содержит page
+        self.assertFalse(response.context['page'] is None,
+            'Из view "profile" в шаблон не передаётся "page"'
+        )
+        # page содержит post, post содержит "text" "username" "pub_date"
+        first_object_post = response.context['page'][0]
+        post_text = first_object_post.text
+        post_author = first_object_post.author
+        post_pub_date = first_object_post.pub_date
+        self.assertFalse(post_text is None, 
+            'Первый объект "post" не содержит "text"'
+        )
+        self.assertEqual(post_text, self.test_class.test_post.text,
+            '"text" из первого "post" не равен "text" тестового поста'
+        )
+        self.assertFalse(post_author is None,
+            'Первый объект "post" не содержит "author"'
+        )
+        self.assertEqual(post_author, self.test_class.test_post.author,
+            '"author" из первого "post" не равен "author" тестового поста'
+        )
+        self.assertFalse(post_pub_date is None,
+            'Первый объект "post" не содержит "post_pub_date"'
+        )
+        self.assertEqual(post_pub_date, self.test_class.test_post.pub_date,
+            '"pub_date" из первого "post" не равен "pub_date" тестового поста'
+        )
+
+    # name "group_index"
+    def test_group_index_put_in_render_right_context(self):
+        """Проверка, что "group_index" выдаёт верный контекст в шаблон.
+        
+        Должно передаваться в шаблон page: List[Group]
+        """
+        response = self.test_class.guest_client.get(reverse('group_index'))
+        
+        # контекст содержит page
+        self.assertFalse(response.context['page'] is None,
+            'Из view "group_index" в шаблон не передаётся "page"'
+        )
+        # page содержит group[], group содержит "title" "description" "slug"
+        first_object_group = response.context['page'][0]
+        group_title = first_object_group.title
+        group_description = first_object_group.description
+        group_slug = first_object_group.slug
+
+        # group title
+        self.assertFalse(group_title is None, 
+            'Первый объект "group" не содержит "title"'
+        )
+        self.assertEqual(group_title, self.test_class.group_test.title,
+            '"title" из первого "group" не равен "title" тестового поста'
+        )
+        # group description
+        self.assertFalse(group_description is None,
+            'Первый объект "group" не содержит "description"'
+        )
+        self.assertEqual(group_description, self.test_class.group_test.description,
+            ('"description" из первого "group"'
+            ' не равен "description" тестовой группы')
+        )
+        # group slug
+        self.assertFalse(group_slug is None,
+            'Первый объект "post" не содержит "slug"'
+        )
+        self.assertEqual(group_slug, self.test_class.group_test.slug,
+            '"slug" из первого "group" не равен "slug" тестовой группы'
+        )
+
+    # name post
+    def test_post_put_in_render_right_context(self):
+        """Проверка, что "post" выдаёт верный контекст в шаблон.
+        
+        Должно передаваться в шаблон post: Post, author: Post.author
+        """
+        response = self.test_class.guest_client.get(reverse('group_index'))
 
 
-        response = self.guest_client.get(
-            reverse('group', kwargs={'slug': first_slug}))
-        posts_per_page = response.context.get('page').object_list
-        self.assertEqual(len(posts_per_page),
-                         YaTbPagesTests.COUNT_ITEMS_FOR_PAGINATOR,
-                         'Количество постов не равно пагинатору')
-        """Количество постов, выводимых на странице равно пагинатору"""
 
-        for post in posts_per_page:            
-            self.assertTrue(hasattr(post, 'author') in response.context,
-                            'Нет post.author в context шаблона index')
-            self.assertTrue(hasattr(post, 'text') in response.context,
-                            'Нет post.author в context шаблона index')
-            self.assertTrue(hasattr(post, 'group') in response.context,
-                            'Нет post.author в context шаблона index')
+
+
 
 """Проверка 
 Проверьте, соответствует ли ожиданиям словарь context, передаваемый в шаблон при вызове
