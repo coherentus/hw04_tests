@@ -1,6 +1,5 @@
-from random import randint
-
 from django import forms
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 from django.urls import reverse
@@ -41,10 +40,9 @@ class YaTb_test_views_context_without_form(TestCase):
         # тестовый пост
         cls.test_post = Post.objects.create(
             author=cls.user_test,
-            text='test_post_text'
+            text='test_post_text',
+            group=cls.group_test
         )
-        cls.test_post.save()
-        cls.group_test.save()
 
         # неавторизованный клиент
         cls.guest_client = Client()
@@ -65,7 +63,8 @@ class YaTb_test_views_context_without_form(TestCase):
             'Из view "index" в шаблон не передаётся "page"'
         )
         # page содержит post, post содержит "text" "username" "pub_date"
-        first_object_post = response.context['page'][0]
+        page_list = response.context.get('page').object_list
+        first_object_post = page_list[0]
         post_text = first_object_post.text
         post_author = first_object_post.author
         post_pub_date = first_object_post.pub_date
@@ -104,7 +103,8 @@ class YaTb_test_views_context_without_form(TestCase):
             'Из view "group" в шаблон не передаётся "page"'
         )
         # page содержит post, post содержит "text" "username" "pub_date"
-        first_object_post = response.context['page'][0]
+        page_list = response.context.get('page').object_list
+        first_object_post = page_list[0]
         post_text = first_object_post.text
         post_author = first_object_post.author
         post_pub_date = first_object_post.pub_date
@@ -268,12 +268,175 @@ class YaTb_test_views_context_without_form(TestCase):
         
         Должно передаваться в шаблон post: Post, author: Post.author
         """
-        response = self.test_class.guest_client.get(reverse('group_index'))
+        response = self.test_class.guest_client.get(
+            reverse('post',
+                kwargs={'username': self.test_class.user_test.username,
+                        'post_id': self.test_class.test_post.id}
+            )
+        )
+        # контекст содержит post author
+        self.assertFalse(response.context['post'] is None,
+            'Из view "post_view" в шаблон не передаётся "post"'
+        )
+        self.assertFalse(response.context['author'] is None,
+            'Из view "post_view" в шаблон не передаётся "author"'
+        )
+        # "post" равен тестовому посту
+        self.assertEqual(response.context['post'], self.test_class.test_post,
+            '"post" из контекста не равен тестовому посту'
+        )
+        # "author" из контекста равен тестовому юзеру
+        self.assertEqual(response.context['author'], self.test_class.user_test,
+            '"author" из контекста не равен тестовому юзеру'
+        )
+
+class YaTb_test_post_route_right_group(TestCase):
+    """Проверка создания поста в группе
+
+    После создания поста в группе, он должен:
+    - появиться на главной странице
+    - появиться на странице своей группы
+    - отсутствовать на странице не своей группы
+    """
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        # тестовый юзер автор поста
+        cls.user_test = User.objects.create(
+            username='very_test_user'
+        )
+        
+        # тестовая группа для поста
+        cls.group_test_post = Group.objects.create(
+            title='test_group_title_with_post',
+            description = 'test_description_for_test_group_of_post',
+            slug='test-slug-for-post'
+        )
+        # тестовая группа для отсутствия поста
+        cls.group_test_nopost = Group.objects.create(
+            title='test_group_title_without_post',
+            description = 'description_of_test_group_without_post',
+            slug='test-slug-no-post'
+        )
+
+        # неавторизованный клиент
+        cls.guest_client = Client()
+
+    def setUp(self):
+        self.test_class = YaTb_test_post_route_right_group
+
+        # тестовый пост
+        self.test_post = Post.objects.create(
+            author=self.test_class.user_test,
+            text='test_post_text',
+            group=self.test_class.group_test_post
+        )
+
+    def test_post_after_create_in_index(self):
+        """Проверка, что пост попадает на главную"""
+        response = self.test_class.guest_client.get(reverse('index'))
+        
+        # post.id с главной и post.id созданного тестового поста
+        self.assertEqual(response.context['page'][0].id,
+            self.test_post.id,
+            'Созданный пост не показался на главной'
+        )
+
+    def test_post_after_create_in_self_group(self):
+        """Проверка, что пост попадает в свою группу"""
+        response = self.test_class.guest_client.get(
+            reverse('group',
+                kwargs={'slug': self.test_class.group_test_post.slug}
+            )
+        )
+
+        # post.id со страницы руппы и post.id созданного тестового поста
+        self.assertEqual(response.context['page'][0].id,
+            self.test_post.id,
+            'Созданный пост не показался на странице группы'
+        )
+
+    def test_post_after_create_not_in_another_group(self):
+        """Проверка, что пост не попадает в чужую группу"""
+        
+        # новый пост для второй группы, чтобы "page" содержал объект
+        self.test_class.test_post_2 = Post.objects.create(
+            author=self.test_class.user_test,
+            text='test_post_text',
+            group=self.test_class.group_test_nopost
+        )
+
+        response = self.test_class.guest_client.get(
+            reverse('group',
+                kwargs={'slug': self.test_class.group_test_nopost.slug}
+            )
+        )
+
+        # post.id со страницы группы и post.id созданного тестового поста
+        self.assertNotEqual(response.context['page'][0].id,
+            self.test_post.id,
+            'Созданный пост оказался на странице чужой группы'
+        )
+
+
+class YaTb_test_paginator_index_group_profile_groupindex(TestCase):
+    """Проверка пагинатора для всех страниц, где он должен работать
+
+    view_name           objects
+    'index'             posts
+    'group'             posts
+    'profile'           posts
+    'group_index'       groups
+    для проверки переопределяется константа settings.PAGINATOR_DEFAULT_SIZE
+    """
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        # тестовый юзер автор постов
+        cls.user_test = User.objects.create(
+            username='very_test_user'
+        )
+        
+        # тестовые группы для 'group_index'
+        cls.group_test_post = Group.objects.create(
+            title='test_group_title_with_post',
+            description = 'test_description_for_test_group_of_post',
+            slug='test-slug-for-post'
+        )
+        
+        # тестовые посты для 'index' 'group' 'profile'
+        for i in range(6):
+            Post.objects.create(
+                text = 'test_text_'+str(i),
+                author = cls.user_test,
+                group = cls.group_test_post
+            )
+
+        # неавторизованный клиент
+        cls.guest_client = Client()
+
+        settings.PAGINATOR_DEFAULT_SIZE = 4
+
+    def setUp(self):
+        self.test_class = YaTb_test_paginator_index_group_profile_groupindex
+
+    def test_index_items_per_page(self):
+        """ """
+        response = self.test_class.guest_client.get(reverse('index'))
+        
+        # 
+        obj_list = response.context['page']
+        self.assertEqual(len(obj_list), 8, 'not worked')
+
+
+    
 
 
 
 
 
+
+    
 
 """Проверка 
 Проверьте, соответствует ли ожиданиям словарь context, передаваемый в шаблон при вызове
@@ -289,7 +452,8 @@ class YaTb_test_views_context_without_form(TestCase):
 на странице выбранной группы.
 Проверьте, что этот пост не попадает в группу, для которой не был предназначен.
 
-На главной странице, странице группы и на странице профайла пользователя проверьте паджинатор: убедитесь, что в словарь context передаётся по 10 записей на страницу.
+На главной странице, странице группы и на странице профайла пользователя проверьте паджинатор:
+ убедитесь, что в словарь context передаётся по 10 записей на страницу.
 
 
 """
