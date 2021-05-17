@@ -398,10 +398,11 @@ class YaTb_test_paginator_index_group_profile_groupindex(TestCase):
         )
         
         # тестовые группы для 'group_index'
-        cls.group_test_post = Group.objects.create(
-            title='test_group_title_with_post',
-            description = 'test_description_for_test_group_of_post',
-            slug='test-slug-for-post'
+        for i in range(8):
+            Group.objects.create(
+                title='test_group_title_with_post' + str(i),
+                description = 'test_description_for_test_group_of_post' + str(i),
+                slug='test-slug-for-post' + str(i)
         )
         
         # тестовые посты для 'index' 'group' 'profile'
@@ -409,24 +410,92 @@ class YaTb_test_paginator_index_group_profile_groupindex(TestCase):
             Post.objects.create(
                 text = 'test_text_'+str(i),
                 author = cls.user_test,
-                group = cls.group_test_post
+                group = Group.objects.get(id=1)
             )
 
         # неавторизованный клиент
         cls.guest_client = Client()
-
-        settings.PAGINATOR_DEFAULT_SIZE = 4
+        
 
     def setUp(self):
         self.test_class = YaTb_test_paginator_index_group_profile_groupindex
 
-    def test_index_items_per_page(self):
-        """ """
-        response = self.test_class.guest_client.get(reverse('index'))
+        # набор для subTest 'index' 'group' 'profile'
+        self.test_name_args = {
+            'index': '',
+            'group': {'slug': Group.objects.get(id=1).slug},
+            'profile': {'username': self.test_class.user_test.username}
+        }
+
+    def test_item_posts_per_page(self):
+        """Проверка, что все посты правильно разбиваются на страницы.
         
-        # 
-        obj_list = response.context['page']
-        self.assertEqual(len(obj_list), 8, 'not worked')
+        Всего постов - 6, 
+        константа пагинатора - 4,
+        Ожидаемая разбивка - 4 для первой страницы и 2 для второй(последней).
+        """
+        settings.PAGINATOR_DEFAULT_SIZE = 4
+        test_array = self.test_name_args
+        for name, args in test_array.items():
+
+            with self.subTest(name=name):
+
+                # Первая порция(страница)
+                response = self.test_class.guest_client.get(
+                    reverse(name, kwargs = args)                
+                )
+                
+                obj_list = response.context['page']
+                self.assertEqual(len(obj_list),
+                    settings.PAGINATOR_DEFAULT_SIZE,
+                    ('Количество постов на первой странице "', name,
+                    '" не равно константе settings.PAGINATOR_DEFAULT_SIZE.')
+                )
+
+                # Последняя порция(страница)
+                response = self.test_class.guest_client.get(
+                    reverse(name, kwargs=args) + '?page=2'                
+                )
+                
+                obj_list = response.context['page']
+                self.assertEqual(len(obj_list),
+                    Post.objects.count() - settings.PAGINATOR_DEFAULT_SIZE,
+                    ('Количество постов на второй странице "', name,
+                    '" не равно остатку постов.')
+                )
+
+    def test_item_groups_per_page(self):
+            """Проверка, что все группы правильно разбиваются на страницы.
+            
+            Всего групп - 8, 
+            константа пагинатора - 5,
+            Ожидаемая разбивка - 5 для первой страницы и 3 для второй(последней).
+            """
+            settings.PAGINATOR_DEFAULT_SIZE = 5
+            # Первая порция(страница)
+            response = self.test_class.guest_client.get(
+                reverse('group_index')
+            )
+            
+            obj_list = response.context['page']
+            self.assertEqual(len(obj_list),
+                settings.PAGINATOR_DEFAULT_SIZE,
+                ('Количество групп на первой странице "/group" не равно'
+                ' константе settings.PAGINATOR_DEFAULT_SIZE.')
+            )
+
+            # Последняя порция(страница)
+            response = self.test_class.guest_client.get(
+                reverse('group_index') + '?page=2'                
+            )
+            
+            obj_list = response.context['page']
+            self.assertEqual(len(obj_list),
+                Group.objects.count() - settings.PAGINATOR_DEFAULT_SIZE,
+                ('Количество групп на второй странице "/group" не равно'
+                ' остатку постов.')
+            )
+
 
 
     
