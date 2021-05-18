@@ -27,7 +27,7 @@ def index(request):
     page = pagination(request, post_list)
     return render(
         request,
-        'posts/index.html',
+        'posts/index2.html',
         {'page': page},
     )
 
@@ -51,7 +51,7 @@ def group_index(request):
 def new_post(request):
     """For post-obj create form, render and check it, then save model-obj."""
     # initialise PostForm() with 'None' if request.POST absent
-    form = PostForm(request.POST or None)
+    form = PostForm(request.POST or None, files=request.FILES or None)
 
     if form.is_valid():
         new_post = form.save(commit=False)
@@ -87,7 +87,8 @@ def post_edit(request, username, post_id):
         return redirect('post', username=username,
                         post_id=post_id)
 
-    form = PostForm(request.POST or None, instance=post)
+    form = PostForm(request.POST or None,
+                    files=request.FILES or None, instance=post)
     if form.is_valid():
         post.save()
         return redirect('post', username=post.author.username,
@@ -95,3 +96,21 @@ def post_edit(request, username, post_id):
 
     return render(request, 'posts/new_post.html',
                   {'form': form, 'edit_flag': True})
+
+
+def add_comment(request):
+    pass
+
+
+def page_not_found(request, exception):
+    return render(
+        request, 
+        "misc/404.html", 
+        {"path": request.path}, 
+        status=404
+    )
+
+
+def server_error(request):
+    return render(request, "misc/500.html", status=500) 
+

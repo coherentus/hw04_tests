@@ -39,7 +39,8 @@ class Post(models.Model):
     )
     pub_date = models.DateTimeField(
         verbose_name='Дата публикации',
-        auto_now_add=True
+        auto_now_add=True,
+        db_index=True
     )
     author = models.ForeignKey(
         User, on_delete=models.CASCADE,
@@ -49,6 +50,7 @@ class Post(models.Model):
         Group, on_delete=models.SET_NULL, blank=True, null=True,
         related_name='posts', verbose_name='Подборка записей'
     )
+    image = models.ImageField(upload_to='posts/', blank=True, null=True)
 
     class Meta:
         ordering = ('-pub_date',)
@@ -57,3 +59,7 @@ class Post(models.Model):
 
     def __str__(self):
         return self.text[:15]
+
+
+class Comment(models.Model):
+    pass

@@ -1,4 +1,23 @@
+"""Пакет тестов URL проекта YaTube
+
+Состав:
+YaTbStaticPagesURLTests(TestCase):
+Проверка статичных страниц 'об авторе' 'о технолоиях'.
+
+YaTb_test_pages_404(TestCase)
+Проверка ответа 404
+
+class YatubeURL_AbsPath_Tests(TestCase):
+Проверка доступности абсолютных url-адресов
+
+class YatubeURL_Path_Tests_reverse(TestCase):
+Проверка доступности url-адресов через reverse()
+
+class YatubeURL_Path_isTemplates_right_Tests(TestCase):
+Проверка правильности шаблонов по url-адресам
+"""
 from django.contrib.auth import get_user_model
+from django.http import response
 from django.test import Client, TestCase
 from django.urls import reverse
 
@@ -56,6 +75,29 @@ class YaTbStaticPagesURLTests(TestCase):
             ('Нужно проверить, что для страницы "/about/tech"'
              ' используется шаблон "about/tech.html"')
         )
+
+
+class YaTb_test_pages_404(TestCase):
+    """Проверка ответа 404"""
+    
+    def setUp(self):
+        # неавторизованный клиент
+        self.guest_client = Client()
+    
+    def test_404_status_non_exist_page(self):
+        resp = self.guest_client.get('/non_exist_page')
+        self.assertEqual(
+            resp.status_code, 404,
+            ('Обращение GET к несуществующей странице '
+             'не возвращает статус 404')
+        )
+        resp = self.guest_client.post('/non_exist_page')
+        self.assertEqual(
+            resp.status_code, 404,
+            ('Обращение POST к несуществующей странице '
+             'не возвращает статус 404')
+        )
+
 
 
 class YatubeURL_AbsPath_Tests(TestCase):
