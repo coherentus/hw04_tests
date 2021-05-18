@@ -9,6 +9,23 @@ User = get_user_model()
 
 
 class YaTbSmokeTst(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.test_user = User.objects.create_user(
+            username='Toster'
+        )
+
+        cls.test_group = Group.objects.create(
+            title='Title test group',
+            description='Description test group'
+        )
+        cls.test_post = Post.objects.create(
+            text='Самый тестовый из постов',
+            author=cls.test_user
+        )
+
+        cls.guest_client = Client()
 
     def test_smoke(self):
         """'Дымовой тест. Проверка, что на запрос '/' ответ 200."""
@@ -23,14 +40,14 @@ class YaTbSmokeTst(TestCase):
     def test_group_str(self):
         """Проверка, что Group.__str__ возвращает название группы."""
         self.assertEqual(
-            f'{self.test_group}', 'test_group',
+            f'{self.test_group}', 'Title test group',
             'Метод Group.__str__ не работает ожидаемым образом'
         )
 
     def test_post_str(self):
         """Проверка, что Post.__str__ возвращает первые 15 символов поста."""
         self.assertEqual(
-            f'{self.test_post}', 'test post text ',
+            f'{self.test_post}', 'Самый тестовый ',
             'Метод Post.__str__ не работает ожидаемым образом'
         )
 
@@ -108,6 +125,3 @@ class YaTube_Test_Models(TestCase):
             with self.subTest(field=field):
                 self.assertEqual(
                     post._meta.get_field(field).verbose_name, expected_value)
-
-
-        
