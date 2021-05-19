@@ -285,7 +285,7 @@ class YatubeURL_Path_isTemplates_right_Tests(TestCase):
     '<str:username>/<int:post_id>/'         posts/post.html
     '<str:username>/<int:post_id>/edit/'    posts/new_post.html
     '/about/author/'                        about/author.html
-    '/about/tech/'                          about/tech.html    
+    '/about/tech/'                          about/tech.html
     """
     @classmethod
     def setUpClass(cls):
@@ -318,7 +318,7 @@ class YatubeURL_Path_isTemplates_right_Tests(TestCase):
         cls.authorized_client_a.force_login(cls.user_with_post)
         # авторизованный клиент без поста
         cls.authorized_client = Client()
-        cls.authorized_client.force_login(cls.user_no_post)        
+        cls.authorized_client.force_login(cls.user_no_post)
 
         # набор пар "url": "имя шаблона"
         cls.templts_url_temlate_name = {

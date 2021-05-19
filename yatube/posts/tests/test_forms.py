@@ -1,6 +1,4 @@
-from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase
 from django.urls import reverse
 
@@ -16,18 +14,18 @@ class TestCreatePostForm(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        
-        cls.autorized_user = User.objects.create_user(
-            username = 'test_user',
-            password = '12345678'
+
+        cls.autorized_user = User.objects.create(
+            username='test_user',
+            password='12345678'
         )
-        
+
         cls.test_group = Group.objects.create(
-            title = 'test_group_for_test_form',
-            description = 'Description of test group',
-            slug = 'slug_for_form'
+            title='test_group_for_test_form',
+            description='Description of test group',
+            slug='slug_for_form'
         )
-        
+
         cls.form = PostForm()
 
     def setUp(self):
