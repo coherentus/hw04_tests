@@ -10,8 +10,9 @@ from posts.models import Group, Post
 User = get_user_model()
 
 
-class YaTb_test_create_PostForm(TestCase):
-    """Проверка создания работы формы для создания поста."""
+class TestCreatePostForm(TestCase):
+    """Проверка работы формы PostForm для создания поста."""
+
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -30,39 +31,58 @@ class YaTb_test_create_PostForm(TestCase):
         cls.form = PostForm()
 
     def setUp(self):
-        self.test_class = YaTb_test_create_PostForm
-
-        # неавторизованный клиент
-        self.guest_client = Client()
-
-        # авторизованный клиент
         self.authorized_client = Client()
-        self.authorized_client.force_login(self.test_class.autorized_user)
+        user = TestCreatePostForm.autorized_user
+        self.authorized_client.force_login(user)
     
-    def test_create_post(self):
-        """Проверка, что после валидации добавляется пост."""
-        
-        post_count_before = Post.objects.count()
+    def test_create_post_user(self):
+        """Проверка, что после валидации добавляется пост."""        
+        group = TestCreatePostForm.test_group
         
         form_data = {
             'text': 'Тестовый пост для проверки формы',
-            'group': self.test_class.test_group,
+            'group': group.id,
         }
+        if Post.objects.count():
+            Post.objects.all().delete()
         
         response = self.authorized_client.post(
             reverse('new_post'),
             data=form_data,
             follow=True
         )
-        
+        bd_post = Post.objects.first()
         self.assertRedirects(response, reverse('index'))
-        
-        self.assertEqual(Post.objects.count(), post_count_before + 1)
-        
-        self.assertTrue(
-            Post.objects.filter(
-                slug=self.test_class.test_group.slug,
-                text='Тестовый пост для проверки формы',                
-                ).exists()
+        self.assertEqual(Post.objects.count(), 1)
+        self.assertEqual(bd_post.text, form_data['text'])
+        self.assertEqual(bd_post.group.id, form_data['group'])
+        self.assertEqual(
+            bd_post.author, TestCreatePostForm.autorized_user
         )
 
+
+    def test_not_create_post_with_guest(self):
+        form_data = {
+            'text': 'Тестовый пост для проверки формы',            
+        }
+        guest_client = Client()
+        posts_count = Post.objects.count()
+        response = guest_client.post(
+            reverse('new_post'),
+            data=form_data,
+            follow=True
+        )
+        self.assertRedirects(response, '/auth/login/?next=/new/')
+        self.assertEqual(Post.objects.count(), posts_count)
+
+
+
+
+
+
+
+
+"""Post.objects.filter(
+                slug=self.test_class.test_group.slug,
+                text='Тестовый пост для проверки формы',                
+                ).exists()"""
