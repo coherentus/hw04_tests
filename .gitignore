@@ -162,3 +162,4 @@ yatube/posts/templates/posts/Untitled-1.txt
 yatube/posts/templates/posts/post1.html
 yatube/posts/fixtures/test_data.json
 yatube/posts/fixtures/
+yatube/posts/tests/test_models2.py

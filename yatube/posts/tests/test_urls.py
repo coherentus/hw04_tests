@@ -1,3 +1,5 @@
+from http import HTTPStatus
+
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 from django.urls import reverse
@@ -8,57 +10,17 @@ from posts.views import (index, group_index, new_post, profile, post_edit,
 
 User = get_user_model()
 
+class StaticURLTests(TestCase):
 
-class YaTbStaticPagesURLTests(TestCase):
-    """Проверка статичных страниц 'об авторе' 'о технолоиях'."""
-    def setUp(self):
-        # Неавторизованый клиент
-        self.guest_client = Client()
+    def test_smoke(self):
+        """'Дымовой тест. Проверка, что на запрос '/' ответ 200."""
+        guest_client = Client()        
+        static_url = ('/', )
+        response = guest_client.get(static_url)
+        self.assertEqual(response.status_code, HTTPStatus.OK)
 
-    def test_about_url_exists_at_desired_location(self):
-        """Проверка доступности адреса /about/author/."""
-        response = self.guest_client.get('/about/author/')
-        self.assertEqual(
-            response.status_code, 200,
-            ('Нужно проверить доступность страницы /about/author'
-             'для неавторизованного пользователя')
-        )
-
-    def test_tech_url_exists_at_desired_location(self):
-        """Проверка доступности адреса /about/tech/."""
-        response = self.guest_client.get('/about/tech/')
-        self.assertEqual(
-            response.status_code, 200,
-            ('Нужно проверить доступность страницы /about/tech'
-             ' для неавторизованного пользователя')
-        )
-
-    def test_about_url_uses_correct_template(self):
-        """Проверка шаблона для адреса /about/author/.
-
-        Для страницы 'about/author' должен применяться
-        шаблон 'about/author.html'"""
-        response = self.guest_client.get('/about/author/')
-        self.assertTemplateUsed(
-            response, 'about/author.html',
-            ('Нужно проверить, что для страницы "/about/author"'
-             ' используется шаблон "about/author.html"')
-        )
-
-    def test_tech_url_uses_correct_template(self):
-        """Проверка шаблона для адреса /about/tech/.
-
-        Для страницы '/about/tech' должен применяться
-        шаблон 'about/tech.html'"""
-        response = self.guest_client.get('/about/tech/')
-        self.assertTemplateUsed(
-            response, 'about/tech.html',
-            ('Нужно проверить, что для страницы "/about/tech"'
-             ' используется шаблон "about/tech.html"')
-        )
-
-
-class YatubeURL_AbsPath_Tests(TestCase):
+        
+class UrlAbsPathTests(TestCase):
     """Проверка доступности абсолютных url-адресов
 
     В проекте есть адреса с разной доступностью для guest и user
@@ -75,35 +37,28 @@ class YatubeURL_AbsPath_Tests(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        # два тестовых юзера, один - автор поста
+        
+        
+        
+        
+        
+        
         cls.user_with_post = User.objects.create(
             username='poster'
         )
         cls.user_no_post = User.objects.create(
             username='silent'
         )
-        # тестовая группа
+        
         cls.group_test = Group.objects.create(
             title='test_group_title',
             slug='test-slug'
         )
 
-        # тестовый пост
         cls.test_post = Post.objects.create(
             author=cls.user_with_post,
             text='test_post_text'
         )
-        cls.test_post.save()
-        cls.group_test.save()
-
-        # неавторизованный клиент
-        cls.guest_client = Client()
-        # авторизованный клиент с постом
-        cls.authorized_client_a = Client()
-        cls.authorized_client_a.force_login(cls.user_with_post)
-        # авторизованный клиент без поста
-        cls.authorized_client = Client()
-        cls.authorized_client.force_login(cls.user_no_post)
 
         # набор пар "url": "status code" для guest
         cls.templts_pgs_names = {
@@ -115,7 +70,13 @@ class YatubeURL_AbsPath_Tests(TestCase):
         }
 
     def setUp(self):
-        self.test_class = YatubeURL_AbsPath_Tests
+        
+        self.authorized_client_a = Client()
+        self.authorized_client_a.force_login(cls.user_with_post)
+
+        self.authorized_client = Client()
+        self.authorized_client.force_login(cls.user_no_post)
+
 
     def test_guest_get_nonautorized_pages(self):
         """Проверка, что guest видит доступные страницы"""
@@ -273,73 +234,3 @@ class YatubeURL_Path_Tests_reverse(TestCase):
                                          kwargs=args_array), page_url)
 
 
-class YatubeURL_Path_isTemplates_right_Tests(TestCase):
-    """Проверка правильности шаблонов по url-адресам
-
-    URL                                     temlate
-    '/'                                     posts/index.html
-    '/group/'                               posts/group_index.html
-    '/group/<slug:slug>/'                   posts/group.html
-    '/new/'                                 posts/new_post.html
-    '<str:username>/'                       posts/profile.html
-    '<str:username>/<int:post_id>/'         posts/post.html
-    '<str:username>/<int:post_id>/edit/'    posts/new_post.html
-    '/about/author/'                        about/author.html
-    '/about/tech/'                          about/tech.html
-    """
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        # два тестовых юзера, один - автор поста
-        cls.user_with_post = User.objects.create(
-            username='poster_user'
-        )
-        cls.user_no_post = User.objects.create(
-            username='silent_user'
-        )
-        # тестовая группа
-        cls.group_test = Group.objects.create(
-            title='test_group_title',
-            slug='test-slug'
-        )
-
-        # тестовый пост
-        cls.test_post = Post.objects.create(
-            author=cls.user_with_post,
-            text='test_post_text'
-        )
-        cls.test_post.save()
-        cls.group_test.save()
-
-        # неавторизованный клиент
-        cls.guest_client = Client()
-        # авторизованный клиент с постом
-        cls.authorized_client_a = Client()
-        cls.authorized_client_a.force_login(cls.user_with_post)
-        # авторизованный клиент без поста
-        cls.authorized_client = Client()
-        cls.authorized_client.force_login(cls.user_no_post)
-
-        # набор пар "url": "имя шаблона"
-        cls.templts_url_temlate_name = {
-            '/': 'posts/index.html',
-            '/group/': 'posts/group_index.html',
-            '/group/test-slug/': 'posts/group.html',
-            '/new/': 'posts/new_post.html',
-            '/poster_user/': 'posts/profile.html',
-            '/poster_user/1/': 'posts/post.html',
-            '/poster_user/1/edit/': 'posts/new_post.html',
-            '/about/author/': 'about/author.html',
-            '/about/tech/': 'about/tech.html',
-            '/auth/signup/': 'users/signup.html',
-        }
-
-    def test_right_temlate_use_with_url(self):
-        """Проверка, что по запросу url используется верный шаблон"""
-        test_class = YatubeURL_Path_isTemplates_right_Tests
-        test_array = test_class.templts_url_temlate_name
-        for page_url, temlat_name in test_array.items():
-
-            with self.subTest(page_url=page_url):
-                resp = test_class.authorized_client_a.get(page_url)
-                self.assertTemplateUsed(resp, temlat_name)
