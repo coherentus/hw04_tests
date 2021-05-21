@@ -110,7 +110,7 @@ class UrlAbsPathTests(TestCase):
         "/new/"                                 guest -> /login
         """
         guest_client = Client()
-        user_client = self.authorized_client_a
+        user_client = self.authorized_client
         user_with_post = UrlAbsPathTests.user_with_post.username
         post_id = UrlAbsPathTests.test_post.id
 
@@ -121,7 +121,7 @@ class UrlAbsPathTests(TestCase):
         path_new = '/new/'
         next_path_new = ''.join(['?next=', path_new])
 
-        path_user_post_edit = f'/{user_with_post}/{post_id}/edit'
+        path_user_post_edit = f'/{user_with_post}/{post_id}/edit/'
         next_path_user_post_edit = ''.join(['?next=', path_user_post_edit])
 
         reverse_post = reverse('post', args=(user_with_post, post_id))
@@ -137,7 +137,7 @@ class UrlAbsPathTests(TestCase):
 
             (path_user_post_edit,
              user_client, 'user',
-             ''.join([reverse_post, next_path_user_post_edit])),
+             reverse_post),
         )
 
         for abs_url_client_redirect in list_pgs_client_redirect:
@@ -145,7 +145,38 @@ class UrlAbsPathTests(TestCase):
             param = ''.join([abs_url, ' | ', client_type])
             with self.subTest(param=param):
                 resp = client.get(abs_url)
-                #for key, values in resp.context:
-                #    print('key', key, ' - ', 'value', values)
-                print('\n', resp)
                 self.assertRedirects(resp, redirect)
+
+    def test_url_name_reverse(self):
+        """Проверка правильности url через reverse(name)
+        
+        name                url
+        'index'             '/'
+        'group_index'       'group/'
+        'group'             'group/<slug:slug>/'
+        'new_post'          'new/'
+        'profile'           '<str:username>/'
+        'post'              '<str:username>/<int:post_id>/'
+        'post_edit'         '<str:username>/<int:post_id>/edit/'
+        """
+        username = UrlAbsPathTests.user_with_post.username
+        post_id = UrlAbsPathTests.test_post.id
+        slug = UrlAbsPathTests.group_test.slug
+
+        # набор для третьей группы тестов
+        # (name, url, args)
+        list_name_url_args = (
+            ('index', '/', None),
+            ('group_index', '/group/', None),
+            ('group', f'/group/{slug}/', (slug,)),
+            ('new_post', '/new/', None),
+            ('profile', f'/{username}/', (username,)),
+            ('post', f'/{username}/{post_id}/', (username, post_id)),
+            ('post_edit', f'/{username}/{post_id}/edit/', (username, post_id)),
+        )
+
+        for params in list_name_url_args:
+            name, url, args = params
+            msg = ''.join([name, ' | ', url])
+            with self.subTest(msg=msg):
+                self.assertEqual(url, reverse(name, args=args))
