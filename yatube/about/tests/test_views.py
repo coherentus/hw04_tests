@@ -1,23 +1,30 @@
-def test_about_url_uses_correct_template(self):
-        """Проверка шаблона для адреса /about/author/.
+from django.test import Client, TestCase
 
-        Для страницы 'about/author' должен применяться
-        шаблон 'about/author.html'"""
-        response = self.guest_client.get('/about/author/')
-        self.assertTemplateUsed(
-            response, 'about/author.html',
-            ('Нужно проверить, что для страницы "/about/author"'
-             ' используется шаблон "about/author.html"')
+
+class URLPathTemplatesTests(TestCase):
+    """Проверка правильности шаблонов по url-адресам
+
+    URL                                     temlate
+    '/about/author/'                        about/author.html
+    '/about/tech/'                          about/tech.html
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+
+    def test_right_temlate_use_with_url(self):
+        """Проверка, что по запросу url используется верный шаблон"""
+        guest_client = Client()
+        array_url_temlate_name = (
+            ('/about/author/', 'about/author.html'),
+            ('/about/tech/', 'about/tech.html'),            
         )
 
-    def test_tech_url_uses_correct_template(self):
-        """Проверка шаблона для адреса /about/tech/.
+        for page_url_temlat_name in array_url_temlate_name:
+            page_url, temlat_name = page_url_temlat_name
+            param = ' | '.join([page_url, temlat_name])
+            with self.subTest(param=param):
+                resp = guest_client.get(page_url)
+                self.assertTemplateUsed(resp, temlat_name)
 
-        Для страницы '/about/tech' должен применяться
-        шаблон 'about/tech.html'"""
-        response = self.guest_client.get('/about/tech/')
-        self.assertTemplateUsed(
-            response, 'about/tech.html',
-            ('Нужно проверить, что для страницы "/about/tech"'
-             ' используется шаблон "about/tech.html"')
-        )
