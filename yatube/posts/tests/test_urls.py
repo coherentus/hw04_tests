@@ -19,7 +19,7 @@ class SmokeURLTests(TestCase):
         guest_client = Client()
         static_url = ('/')
         response = guest_client.get(static_url)
-        self.assertEqual(response.status_code, HTTPStatus.OK)
+        self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
 
 
 class UrlAbsPathTests(TestCase):

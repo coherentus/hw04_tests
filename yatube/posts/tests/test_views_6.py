@@ -78,11 +78,11 @@ class ViewsContextTests(TestCase):
     """Проверка контекста, передаваемого из view в шаблоны
 
     name of view            верный контекст содержит
-    'index'             page: QuerySet[Post]
-    'group'             page: QuerySet[Post], group: Grop
-    'profile'           page: QuerySet[Post], profile_user: User
+    'index'             page: QuerySet[Post], image: post.image
+    'group'             page: QuerySet[Post], group: Grop, image: post.image
+    'profile'           page: QuerySet[Post], profile_user: User, image: post.image
     'group_index'       page: QuerySet[Group]
-    'post'              post: Post, author: Post.author
+    'post'              post: Post, author: Post.author, image: post.image
     'new_post'          form: PostForm, edit_flag: bool
     'post_edit'         form: PostForm, edit_flag: bool
     """
@@ -215,6 +215,37 @@ class ViewsContextTests(TestCase):
         self.assertEqual(post_in_context, post_in_db)
         # "author" из контекста равен тестовому юзеру
         self.assertEqual(user_in_context, user_in_db)
+
+    def test_image_in_context(self):
+        """Проверка присутствия в контексте страницы картинки поста.
+        
+        Присутствие картинки поста ожидается:
+        name of view            верный контекст содержит
+        'index'             image: post.image
+        'group'             image: post.image
+        'profile'           image: post.image
+        'post'              image: post.image
+        """
+        guest_client = Client()
+        group = ViewsContextTests.group_test
+        user_a = ViewsContextTests.user_test
+        post = ViewsContextTests.test_post
+        test_array_urls = (
+            ('/'),
+            (f'/group/{group.slug}/'),
+            (f'/{user_a.username}/'),
+        )
+        for url in test_array_urls:
+            with self.subTest(url=url):
+                response = guest_client.get(url)
+                self.assertIn('page', response.context)
+                page_list = response.context.get('page').object_list
+                post_in_context_page = page_list[0]
+                self.assertTrue(hasattr(post_in_context_page, 'image'))
+
+        response = guest_client.get(f'/{user_a.username}/{post.id}/')
+        post_in_context_page = response.context.get('post')
+        self.assertTrue(hasattr(post_in_context_page, 'image'))
 
 
 class PostRouteRightGroup(TestCase):
