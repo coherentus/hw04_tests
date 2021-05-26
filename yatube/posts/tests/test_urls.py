@@ -150,7 +150,7 @@ class UrlAbsPathTests(TestCase):
 
     def test_url_name_reverse(self):
         """Проверка правильности url через reverse(name)
-        
+
         name                url
         'index'             '/'
         'group_index'       'group/'

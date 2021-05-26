@@ -18,7 +18,7 @@ class URLPathTemplatesTests(TestCase):
         guest_client = Client()
         array_url_temlate_name = (
             ('/about/author/', 'about/author.html'),
-            ('/about/tech/', 'about/tech.html'),            
+            ('/about/tech/', 'about/tech.html'),
         )
 
         for page_url_temlat_name in array_url_temlate_name:
@@ -27,4 +27,3 @@ class URLPathTemplatesTests(TestCase):
             with self.subTest(param=param):
                 resp = guest_client.get(page_url)
                 self.assertTemplateUsed(resp, temlat_name)
-

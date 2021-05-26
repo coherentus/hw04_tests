@@ -1,9 +1,9 @@
 /yatube/posts/media
 yatube/sent_emails/
 
-yatube/posts/media
-yatube/media
-/yatube/media
+media/
+yatube/posts/media/
+yatube/media/
 yatube/static/
 yatube/posts/static/
 .vscode/
