@@ -1,5 +1,8 @@
 yatube/sent_emails/
 
+media/
+yatube/posts/media/
+yatube/media/
 yatube/static/
 yatube/posts/static/
 .vscode/
