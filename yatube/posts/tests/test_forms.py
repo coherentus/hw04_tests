@@ -14,14 +14,12 @@ class TestCreateEditPostForm(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.autorized_user = User.objects.create(
+        cls.authorized_user = User.objects.create(
             username='test_user',
-            password='12345678'
         )
 
         cls.user_author = User.objects.create(
             username='test_user_author',
-            password='12345678'
         )
 
         cls.test_group = Group.objects.create(
@@ -30,7 +28,6 @@ class TestCreateEditPostForm(TestCase):
             slug='slug_for_form'
         )
 
-        cls.form = PostForm()
 
     def setUp(self):
         self.authorized_author = Client()
@@ -38,7 +35,7 @@ class TestCreateEditPostForm(TestCase):
         self.authorized_author.force_login(author)
 
         self.authorized_user = Client()
-        user_user = TestCreateEditPostForm.autorized_user
+        user_user = TestCreateEditPostForm.authorized_user
         self.authorized_user.force_login(user_user)
 
         self.test_post = Post.objects.create(
@@ -72,21 +69,22 @@ class TestCreateEditPostForm(TestCase):
         self.assertEqual(bd_post.text, form_data['text'])
         self.assertEqual(bd_post.group, TestCreateEditPostForm.test_group)
         self.assertEqual(
-            bd_post.author, TestCreateEditPostForm.autorized_user
+            bd_post.author, TestCreateEditPostForm.authorized_user
         )
 
     def test_not_create_post_with_guest(self):
         form_data = {
             'text': 'Тестовый пост для проверки формы',
         }
-        guest_client = Client()
         posts_count_before = Post.objects.count()
-        response = guest_client.post(
+        response = self.client.post(
             reverse('new_post'),
             data=form_data,
             follow=True
         )
-        self.assertRedirects(response, reverse('login') + '?next=/new/')
+        self.assertRedirects(
+            response, reverse('login') + '?next=' + reverse('/new/')
+        )
         self.assertEqual(Post.objects.count(), posts_count_before)
 
     def test_not_edit_post_with_user_not_author(self):
@@ -128,7 +126,7 @@ class TestCreateEditPostForm(TestCase):
         post_before['text'] = db_post.text
         post_before['group'] = db_post.group
 
-        _ = self.authorized_author.post(
+        self.authorized_author.post(
             reverse(
                 'post_edit',
                 kwargs={'username': db_post.author.username,
