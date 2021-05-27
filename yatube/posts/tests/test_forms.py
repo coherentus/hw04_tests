@@ -170,7 +170,10 @@ class TestCreateEditPostForm(TestCase):
             data=form_data,
             follow=True
         )
-        new_post = Post.objects.get(id=test_post_id)
+        edited_post = Post.objects.get(id=test_post_id)
         self.assertEqual(Post.objects.count(), posts_count_before)
-        self.assertEqual(new_post.text, form_data['text'])
-        self.assertEqual(new_post.group.id, form_data['group'])
+        self.assertEqual(edited_post.text, form_data['text'])
+        self.assertEqual(edited_post.group.id, form_data['group'])
+        self.assertEqual(
+            edited_post.author, TestCreateEditPostForm.user_author
+        )
