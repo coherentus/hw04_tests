@@ -1,3 +1,4 @@
+from django import forms
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
@@ -195,6 +196,65 @@ class ViewsContextTests(TestCase):
         user_in_db = ViewsContextTests.user_test
         user_in_context = response.context['author']
         self.assertEqual(user_in_context, user_in_db)
+
+    def test_new_post_put_in_render_right_context(self):
+        """Проверка, что "new_post" выдаёт в шаблон верный контекст.
+
+        В шаблон должны передаваться form: PostForm, edit_flag: bool.
+        """
+        authorize_writer = Client()
+        authorize_writer.force_login(ViewsContextTests.user_test)
+        form_fields = {
+            'text': forms.fields.CharField,
+            'group': forms.fields.ChoiceField,
+        }
+
+        response = authorize_writer.get(reverse('new_post'))
+        self.assertIn('edit_flag', response.context)
+        self.assertTrue(response.context['edit_flag'] is False)
+
+        self.assertIn('form', response.context)
+        for value, expected in form_fields.items():
+            with self.subTest(value=value):
+                form_field = response.context['form'].fields[value]
+                self.assertIsInstance(form_field, expected)
+
+        text_inital = response.context['form'].fields['text'].initial
+        self.assertEqual(text_inital, None)
+
+    def test_post_edit_put_in_render_right_context(self):
+        """Проверка, что "post_edit" выдаёт в шаблон верный контекст.
+
+        В шаблон должны передаваться form: PostForm, edit_flag: bool.
+        """
+        authorize_writer = Client()
+        authorize_writer.force_login(ViewsContextTests.user_test)
+        form_fields = {
+            'text': forms.fields.CharField,
+            'group': forms.fields.ChoiceField,
+        }
+        post_for_edit = ViewsContextTests.test_post
+
+        response = authorize_writer.get(
+            reverse(
+                'post_edit',
+                args=(post_for_edit.author, post_for_edit.id)
+            )
+        )
+        self.assertIn('edit_flag', response.context)
+        self.assertTrue(response.context['edit_flag'] is True)
+
+        self.assertIn('form', response.context)
+        for value, expected in form_fields.items():
+            with self.subTest(value=value):
+                form_field = response.context['form'].fields[value]
+                self.assertIsInstance(form_field, expected)
+
+        form = response.context['form']
+        data_form = form.initial
+
+        self.assertEqual(data_form['text'], post_for_edit.text)
+        self.assertEqual(data_form['group'], post_for_edit.group.id)
 
 
 class PostRouteRightGroup(TestCase):
