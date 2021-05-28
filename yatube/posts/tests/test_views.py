@@ -55,18 +55,18 @@ class URLPathTemplatesTests(TestCase):
         post = URLPathTemplatesTests.test_post
 
         url_template_name = (
-            ('/', 'index.html'),
-            ('/group/', 'group_index.html'),
-            (f'/group/{group.slug}/', 'group.html'),
-            ('/new/', 'new_post.html'),
-            (f'/{user_author.username}/', 'profile.html'),
-            (f'/{user_author.username}/{post.id}/', 'post.html'),
-            (f'/{user_author.username}/{post.id}/edit/', 'new_post.html'),
+            ('index', None, 'index.html'),
+            ('group_index', None, 'group_index.html'),
+            ('group', (group.slug,), 'group.html'),
+            ('new_post', None, 'new_post.html'),
+            ('profile', (user_author.username,), 'profile.html'),
+            ('post', (user_author.username, post.id), 'post.html'),
+            ('post_edit', (user_author.username, post.id), 'new_post.html'),
         )
 
-        for page_url, template_name in url_template_name:
-            with self.subTest(url=page_url, template=template_name):
-                resp = self.authorized_author.get(page_url)
+        for func_name, args, template_name in url_template_name:
+            with self.subTest(url=reverse(func_name, args=args), template=template_name):
+                resp = self.authorized_author.get(reverse(func_name, args=args))
                 self.assertTemplateUsed(resp, f'posts/{template_name}')
 
 
@@ -100,20 +100,19 @@ class ViewsContextTests(TestCase):
             group=cls.group_test
         )
 
-    def page_queryset_post_test(self, response, find_object):
+    def page_queryset_post_test(self, context, find_object):
         post_in_db = ViewsContextTests.test_post
-        self.assertIn(find_object, response.context)
         if find_object == 'page':
-            page_list = response.context.get(find_object).object_list
+            self.assertIn(find_object, context)
+            page_list = context.get(find_object).object_list
             post_in_context = page_list[0]
         elif find_object == 'post':
-            post_in_context = response.context['post']
+            post_in_context = context['post']
 
         self.assertEqual(post_in_context, post_in_db)
         self.assertEqual(post_in_context.text, post_in_db.text)
         self.assertEqual(post_in_context.author, post_in_db.author)
         self.assertEqual(post_in_context.group, post_in_db.group)
-        self.assertEqual(post_in_context.id, post_in_db.id)
 
     def test_index_put_in_render_right_context(self):
         """Проверка, что "index" выдаёт верный контекст в шаблон.
@@ -121,7 +120,7 @@ class ViewsContextTests(TestCase):
         Должно передаваться в шаблон page: QuerySet[Post].
         """
         response = self.client.get(reverse('index'))
-        self.page_queryset_post_test(response, 'page')
+        self.page_queryset_post_test(response.context, 'page')
 
     def test_group_put_in_render_right_context(self):
         """Проверка, что "group" выдаёт верный контекст в шаблон.
@@ -130,17 +129,19 @@ class ViewsContextTests(TestCase):
         """
         response = self.client.get(
             reverse(
-                'group',
-                kwargs={'slug': ViewsContextTests.group_test.slug}
+                'group', args=(ViewsContextTests.group_test.slug,)
             )
         )
-        self.page_queryset_post_test(response, 'page')
+        self.page_queryset_post_test(response.context, 'page')
 
         # контекст содержит group
         group_in_db = ViewsContextTests.group_test
         self.assertIn('group', response.context)
         group_in_context = response.context['group']
         self.assertEqual(group_in_context, group_in_db)
+        self.assertEqual(group_in_context.title, group_in_db.title)
+        self.assertEqual(group_in_context.description,
+                         group_in_db.description)
 
     def test_profile_put_in_render_right_context(self):
         """Проверка, что "profile" выдаёт верный контекст в шаблон.
@@ -153,7 +154,7 @@ class ViewsContextTests(TestCase):
                 kwargs={'username': ViewsContextTests.user_test.username}
             )
         )
-        self.page_queryset_post_test(response, 'page')
+        self.page_queryset_post_test(response.context, 'page')
 
         # контекст содержит profile_user
         user_in_db = ViewsContextTests.user_test
@@ -176,7 +177,6 @@ class ViewsContextTests(TestCase):
         self.assertEqual(group_in_context.description,
                          group_in_db.description)
         self.assertEqual(group_in_context.slug, group_in_db.slug)
-        self.assertEqual(group_in_context.id, group_in_db.id)
 
     def test_post_put_in_render_right_context(self):
         """Проверка, что "post" выдаёт верный контекст в шаблон.
@@ -190,7 +190,7 @@ class ViewsContextTests(TestCase):
                       ViewsContextTests.test_post.id)
             )
         )
-        self.page_queryset_post_test(response, 'post')
+        self.page_queryset_post_test(response.context, 'post')
 
         self.assertIn('author', response.context)
         user_in_db = ViewsContextTests.user_test
@@ -211,7 +211,7 @@ class ViewsContextTests(TestCase):
 
         response = authorize_writer.get(reverse('new_post'))
         self.assertIn('edit_flag', response.context)
-        self.assertTrue(response.context['edit_flag'] is False)
+        self.assertIs(response.context['edit_flag'], False)
 
         self.assertIn('form', response.context)
         for value, expected in form_fields.items():
@@ -242,7 +242,7 @@ class ViewsContextTests(TestCase):
             )
         )
         self.assertIn('edit_flag', response.context)
-        self.assertTrue(response.context['edit_flag'] is True)
+        self.assertIs(response.context['edit_flag'], True)
 
         self.assertIn('form', response.context)
         for value, expected in form_fields.items():
