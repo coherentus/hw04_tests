@@ -94,7 +94,6 @@ class TestCreateEditPostForm(TestCase):
         - авторизованный клиент не автор редиректится на страницу поста
         - поля поста в БД не изменились
         """
-
         user_editor = User.objects.create(
             username='editor_not_owner_post'
         )
@@ -108,35 +107,38 @@ class TestCreateEditPostForm(TestCase):
         )
         test_post_id = test_post.id
         posts_count_before = Post.objects.count()
+        another_group = Group.objects.create(
+            title='Another test group',
+            slug='anover-test-group'
+        )
 
         form_data = {
             'text': 'Тестовый пост для проверки формы',
-            'group': group.id,
+            'group': another_group.id,
         }
-
-        db_post = Post.objects.get(id=test_post_id)
 
         response = authorized_editor.post(
             reverse(
-                'post_edit', args=(db_post.author.username, db_post.id)
+                'post_edit', args=(test_post.author.username, test_post.id)
             ),
             data=form_data,
             follow=True
         )
         self.assertRedirects(
             response, reverse(
-                'post', args=(db_post.author.username, db_post.id)
+                'post', args=(test_post.author.username, test_post.id)
             )
         )
+        db_post = Post.objects.get(id=test_post_id)
         self.assertEqual(Post.objects.count(), posts_count_before)
-        self.assertEqual(test_post, Post.objects.get(id=test_post_id))
-        self.assertEqual(test_post.text, db_post.text)
-        self.assertEqual(test_post.group, db_post.group)
+        self.assertNotEqual(db_post.text, form_data['text'])
+        self.assertNotEqual(db_post.group, form_data['group'])
 
     def test_edit_post_user_author(self):
         """Проверка, что автор поста корректно редактирует пост.
 
         Методика проверки:
+        - клиент редиректится на страницу поста
         - общее количество постов не изменилось.
         - поля поста получили новые корректные значения.
         """
@@ -147,7 +149,6 @@ class TestCreateEditPostForm(TestCase):
             group=group
         )
         test_post_id = test_post.id
-        db_post = Post.objects.get(id=test_post_id)
         posts_count_before = Post.objects.count()
 
         new_group = Group.objects.create(
@@ -156,23 +157,27 @@ class TestCreateEditPostForm(TestCase):
             slug='test-2-slug'
         )
 
-        # Вносимые в пост изменения
         form_data = {
             'text': 'Новый отредактированный текст поста',
             'group': new_group.id
         }
 
-        self.authorized_author.post(
+        response = self.authorized_author.post(
             reverse(
-                'post_edit', args=(db_post.author.username, db_post.id)
+                'post_edit', args=(test_post.author.username, test_post.id)
             ),
             data=form_data,
             follow=True
         )
+        self.assertRedirects(
+            response, reverse(
+                'post', args=(test_post.author.username, test_post.id)
+            )
+        )
         edited_post = Post.objects.get(id=test_post_id)
         self.assertEqual(Post.objects.count(), posts_count_before)
         self.assertEqual(edited_post.text, form_data['text'])
-        self.assertEqual(edited_post.group.id, form_data['group'])
+        self.assertEqual(edited_post.group, new_group)
         self.assertEqual(
             edited_post.author, TestCreateEditPostForm.user_author
         )

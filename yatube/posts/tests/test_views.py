@@ -1,10 +1,10 @@
-from django import forms
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 from django.urls import reverse
 
 from posts.models import Group, Post
+from posts.forms import PostForm
 
 User = get_user_model()
 
@@ -65,8 +65,11 @@ class URLPathTemplatesTests(TestCase):
         )
 
         for func_name, args, template_name in url_template_name:
-            with self.subTest(url=reverse(func_name, args=args), template=template_name):
-                resp = self.authorized_author.get(reverse(func_name, args=args))
+            with self.subTest(url=reverse(func_name, args=args),
+                              template=template_name):
+                resp = self.authorized_author.get(
+                    reverse(func_name, args=args)
+                )
                 self.assertTemplateUsed(resp, f'posts/{template_name}')
 
 
@@ -99,6 +102,7 @@ class ViewsContextTests(TestCase):
             text='test_post_text',
             group=cls.group_test
         )
+        cls.timestamp_test_post = cls.test_post.pub_date
 
     def page_queryset_post_test(self, context, find_object):
         post_in_db = ViewsContextTests.test_post
@@ -107,12 +111,15 @@ class ViewsContextTests(TestCase):
             page_list = context.get(find_object).object_list
             post_in_context = page_list[0]
         elif find_object == 'post':
+            self.assertIn(find_object, context)
             post_in_context = context['post']
 
         self.assertEqual(post_in_context, post_in_db)
         self.assertEqual(post_in_context.text, post_in_db.text)
         self.assertEqual(post_in_context.author, post_in_db.author)
         self.assertEqual(post_in_context.group, post_in_db.group)
+        self.assertEqual(post_in_context.pub_date,
+                         ViewsContextTests.timestamp_test_post)
 
     def test_index_put_in_render_right_context(self):
         """Проверка, что "index" выдаёт верный контекст в шаблон.
@@ -134,7 +141,6 @@ class ViewsContextTests(TestCase):
         )
         self.page_queryset_post_test(response.context, 'page')
 
-        # контекст содержит group
         group_in_db = ViewsContextTests.group_test
         self.assertIn('group', response.context)
         group_in_context = response.context['group']
@@ -156,7 +162,6 @@ class ViewsContextTests(TestCase):
         )
         self.page_queryset_post_test(response.context, 'page')
 
-        # контекст содержит profile_user
         user_in_db = ViewsContextTests.user_test
         self.assertIn('profile_user', response.context)
         user_in_context = response.context['profile_user']
@@ -204,23 +209,11 @@ class ViewsContextTests(TestCase):
         """
         authorize_writer = Client()
         authorize_writer.force_login(ViewsContextTests.user_test)
-        form_fields = {
-            'text': forms.fields.CharField,
-            'group': forms.fields.ChoiceField,
-        }
-
         response = authorize_writer.get(reverse('new_post'))
         self.assertIn('edit_flag', response.context)
         self.assertIs(response.context['edit_flag'], False)
-
         self.assertIn('form', response.context)
-        for value, expected in form_fields.items():
-            with self.subTest(value=value):
-                form_field = response.context['form'].fields[value]
-                self.assertIsInstance(form_field, expected)
-
-        text_inital = response.context['form'].fields['text'].initial
-        self.assertEqual(text_inital, None)
+        self.assertIsInstance(response.context['form'], PostForm)
 
     def test_post_edit_put_in_render_right_context(self):
         """Проверка, что "post_edit" выдаёт в шаблон верный контекст.
@@ -229,10 +222,6 @@ class ViewsContextTests(TestCase):
         """
         authorize_writer = Client()
         authorize_writer.force_login(ViewsContextTests.user_test)
-        form_fields = {
-            'text': forms.fields.CharField,
-            'group': forms.fields.ChoiceField,
-        }
         post_for_edit = ViewsContextTests.test_post
 
         response = authorize_writer.get(
@@ -243,18 +232,8 @@ class ViewsContextTests(TestCase):
         )
         self.assertIn('edit_flag', response.context)
         self.assertIs(response.context['edit_flag'], True)
-
         self.assertIn('form', response.context)
-        for value, expected in form_fields.items():
-            with self.subTest(value=value):
-                form_field = response.context['form'].fields[value]
-                self.assertIsInstance(form_field, expected)
-
-        form = response.context['form']
-        data_form = form.initial
-
-        self.assertEqual(data_form['text'], post_for_edit.text)
-        self.assertEqual(data_form['group'], post_for_edit.group.id)
+        self.assertIsInstance(response.context['form'], PostForm)
 
 
 class PostRouteRightGroup(TestCase):
@@ -320,13 +299,10 @@ class PostRouteRightGroup(TestCase):
 
 
 class PaginatorWorkRight(TestCase):
-    """Проверка пагинатора для всех страниц, где он должен работать.
+    """Проверка пагинатора для главной страницы.
 
     view_name           objects
     'index'             posts
-    'group'             posts
-    'profile'           posts
-    'group_index'       groups
     """
 
     @classmethod
@@ -336,81 +312,35 @@ class PaginatorWorkRight(TestCase):
             username='very_test_user'
         )
 
-        groups_12 = (
-            Group(title='Test %s' % i,
-                  description='test_description%s' % i,
-                  slug='test-slug-%s' % i) for i in range(12)
+        test_group = Group.objects.create(
+            title='Test group',
+            description='test_description',
+            slug='test-slug-s'
         )
-        Group.objects.bulk_create(groups_12)
 
         posts_12 = (
             Post(text='test_text_%s' % i,
                  author=cls.user_test,
-                 group=Group.objects.get(id=1)) for i in range(12)
+                 group=test_group) for i in range(12)
         )
         Post.objects.bulk_create(posts_12)
-
-    def setUp(self):
-        self.test_name_args = {
-            'index': '',
-            'group': {'slug': Group.objects.get(id=1).slug},
-            'profile': {'username': PaginatorWorkRight.user_test.username}
-        }
 
     def test_item_posts_per_page(self):
         """Проверка, что все посты правильно разбиваются на страницы.
 
-        Всего постов - 12,
-        константа пагинатора - 10,
-        Ожидаемая разбивка - 10 для первой страницы и 2 для второй(последней).
+        12-ть постов должны распределиться на 2 страницы.
         """
-        for name, args in self.test_name_args.items():
-            with self.subTest(name=name):
-                # Первая порция(страница)
-                response = self.client.get(
-                    reverse(name, kwargs=args)
-                )
-
-                obj_list = response.context['page']
-                self.assertEqual(
-                    len(obj_list), settings.PAGINATOR_DEFAULT_SIZE
-                )
-
-                # Последняя порция(страница)
-                response = self.client.get(
-                    reverse(name, kwargs=args) + '?page=2'
-                )
-
-                obj_list = response.context['page']
-                self.assertEqual(
-                    len(obj_list),
-                    Post.objects.count() - settings.PAGINATOR_DEFAULT_SIZE
-                )
-
-    def test_item_groups_per_page(self):
-        """Проверка, что все группы правильно разбиваются на страницы.
-
-        Всего групп - 12,
-        константа пагинатора - 10,
-        Ожидаемая разбивка - 10 для первой страницы и 2 для второй(последней).
-        """
-        # Первая порция(страница)
-        response = self.client.get(
-            reverse('group_index')
-        )
+        response = self.client.get(reverse('index'))
 
         obj_list = response.context['page']
         self.assertEqual(
             len(obj_list), settings.PAGINATOR_DEFAULT_SIZE
         )
 
-        # Последняя порция(страница)
-        response = self.client.get(
-            reverse('group_index') + '?page=2'
-        )
+        response = self.client.get(reverse('index') + '?page=2')
 
         obj_list = response.context['page']
         self.assertEqual(
             len(obj_list),
-            Group.objects.count() - settings.PAGINATOR_DEFAULT_SIZE
+            Post.objects.count() - settings.PAGINATOR_DEFAULT_SIZE
         )
