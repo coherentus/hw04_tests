@@ -106,20 +106,18 @@ class ViewsContextTests(TestCase):
 
     def page_queryset_post_test(self, context, find_object):
         post_in_db = ViewsContextTests.test_post
-        if find_object == 'page':
-            self.assertIn(find_object, context)
+        self.assertIn(find_object, context)
+        if find_object == 'page':            
             page_list = context.get(find_object).object_list
             post_in_context = page_list[0]
         elif find_object == 'post':
-            self.assertIn(find_object, context)
             post_in_context = context['post']
 
         self.assertEqual(post_in_context, post_in_db)
         self.assertEqual(post_in_context.text, post_in_db.text)
         self.assertEqual(post_in_context.author, post_in_db.author)
         self.assertEqual(post_in_context.group, post_in_db.group)
-        self.assertEqual(post_in_context.pub_date,
-                         ViewsContextTests.timestamp_test_post)
+        self.assertEqual(post_in_context.pub_date, post_in_db.pub_date)
 
     def test_index_put_in_render_right_context(self):
         """Проверка, что "index" выдаёт верный контекст в шаблон.
