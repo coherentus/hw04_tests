@@ -107,7 +107,7 @@ class ViewsContextTests(TestCase):
     def page_queryset_post_test(self, context, find_object):
         post_in_db = ViewsContextTests.test_post
         self.assertIn(find_object, context)
-        if find_object == 'page':            
+        if find_object == 'page':
             page_list = context.get(find_object).object_list
             post_in_context = page_list[0]
         elif find_object == 'post':

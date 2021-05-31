@@ -1,3 +1,5 @@
+from http import HTTPStatus
+
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
@@ -5,6 +7,19 @@ from django.shortcuts import get_object_or_404, redirect, render
 
 from .forms import PostForm
 from .models import Group, Post, User
+
+
+def page_not_found(request, exception):
+    return render(
+        request, "misc/404.html", {"path": request.path},
+        status=HTTPStatus.NOT_FOUND
+    )
+
+
+def server_error(request):
+    return render(
+        request, "misc/500.html",
+        status=HTTPStatus.INTERNAL_SERVER_ERROR)
 
 
 def pagination(request, objects):
@@ -87,7 +102,8 @@ def post_edit(request, username, post_id):
         return redirect('post', username=username,
                         post_id=post_id)
 
-    form = PostForm(request.POST or None, instance=post)
+    form = PostForm(request.POST or None,
+                    files=request.FILES or None, instance=post)
     if form.is_valid():
         post.save()
         return redirect('post', username=post.author.username,

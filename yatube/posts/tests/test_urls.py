@@ -23,6 +23,7 @@ class UrlAbsPathTests(TestCase):
     "/<str:username>/<int:post_id>/edit/"   u-a     g->/login
                                                     u->/username/post_id/
     "/new/"                                 u       g->/login
+    "/not_defined_url_test_404"             g
     Методика тестов:
     - первый набор тестов GET запросов по абсолютному пути без редиректов.
     Клиенты гостевой и авторизованный
@@ -61,6 +62,11 @@ class UrlAbsPathTests(TestCase):
         self.authorized_reader.force_login(
             UrlAbsPathTests.user_no_post
         )
+
+    def test_get_404_status_with_undefined_url(self):
+        resp = self.client.get('not_defined_url_test_404')
+        self.assertEqual(resp.status_code, HTTPStatus.NOT_FOUND)
+        
 
     def test_get_abs_urls_with_200(self):
         """Проверка абсолютных путей гостевым и авторизованным клиентами."""
