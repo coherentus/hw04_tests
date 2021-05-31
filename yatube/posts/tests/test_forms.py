@@ -1,4 +1,10 @@
+import shutil
+import tempfile
+import os
+
+from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase
 from django.urls import reverse
 
@@ -22,6 +28,12 @@ class TestCreateEditPostForm(TestCase):
             description='Description of test group',
             slug='slug_for_form'
         )
+        settings.MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
+
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+        shutil.rmtree(settings.MEDIA_ROOT, ignore_errors=True)
 
     def setUp(self):
         self.authorized_author = Client()
@@ -38,18 +50,35 @@ class TestCreateEditPostForm(TestCase):
         """
         group = TestCreateEditPostForm.test_group
         user_author = self.authorized_author
+        small_gif = (
+            b'\x47\x49\x46\x38\x39\x61\x01\x00'
+            b'\x01\x00\x00\x00\x00\x21\xf9\x04'
+            b'\x01\x0a\x00\x01\x00\x2c\x00\x00'
+            b'\x00\x00\x01\x00\x01\x00\x00\x02'
+            b'\x02\x4c\x01\x00\x3b'
+        )
+        uploaded = SimpleUploadedFile(
+            name='small.gif',
+            content=small_gif,
+            content_type='image/gif'
+        )
 
         form_data = {
             'text': 'Тестовый пост для проверки формы',
             'group': group.id,
+            'image': uploaded,
         }
         count_post_before = Post.objects.count()
+        
+        print(form_data)
+        print(settings.MEDIA_ROOT)
 
         response = user_author.post(
             reverse('new_post'),
             data=form_data,
             follow=True
         )
+        print(response)
 
         # Для проверки выбирается последний добавленный пост
         # Порядок сортировки в модели по убыванию даты создания
@@ -62,6 +91,7 @@ class TestCreateEditPostForm(TestCase):
         self.assertEqual(
             db_post.author, TestCreateEditPostForm.user_author
         )
+        self.assertEqual(db_post.image, form_data['image'])
 
     def test_not_create_post_with_guest(self):
         """Проверка, что guest POST запросом не может создать пост.

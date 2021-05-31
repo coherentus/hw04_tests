@@ -78,7 +78,7 @@ class ViewsContextTests(TestCase):
 
     name of view            верный контекст содержит
     'index'             page: QuerySet[Post]
-    'group'             page: QuerySet[Post], group: Grop
+    'group'             page: QuerySet[Post], group: Group
     'profile'           page: QuerySet[Post], profile_user: User
     'group_index'       page: QuerySet[Group]
     'post'              post: Post, author: Post.author
@@ -102,7 +102,6 @@ class ViewsContextTests(TestCase):
             text='test_post_text',
             group=cls.group_test
         )
-        cls.timestamp_test_post = cls.test_post.pub_date
 
     def page_queryset_post_test(self, context, find_object):
         post_in_db = ViewsContextTests.test_post
