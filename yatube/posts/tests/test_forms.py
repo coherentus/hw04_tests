@@ -31,8 +31,8 @@ class TestCreateEditPostForm(TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        super().tearDownClass()
         shutil.rmtree(settings.MEDIA_ROOT, ignore_errors=True)
+        super().tearDownClass()
 
     def setUp(self):
         self.authorized_author = Client()
@@ -69,16 +69,11 @@ class TestCreateEditPostForm(TestCase):
         }
         count_post_before = Post.objects.count()
 
-        print(form_data)
-        print(settings.MEDIA_ROOT)
-
         response = user_author.post(
             reverse('new_post'),
             data=form_data,
             follow=True
         )
-        print(response)
-
         # Для проверки выбирается последний добавленный пост
         # Порядок сортировки в модели по убыванию даты создания
         db_post = Post.objects.first()
@@ -185,10 +180,23 @@ class TestCreateEditPostForm(TestCase):
             description='Более другая группа для теста',
             slug='test-2-slug'
         )
+        small_gif = (
+            b'\x47\x49\x46\x38\x39\x61\x01\x00'
+            b'\x01\x00\x00\x01\x00\x21\xf9\x04'
+            b'\x01\x0a\x00\x01\x00\x2c\x00\x00'
+            b'\x00\x00\x01\x00\x01\x00\x00\x02'
+            b'\x02\x4c\x01\x00\x3b'
+        )
+        uploaded = SimpleUploadedFile(
+            name='small.gif',
+            content=small_gif,
+            content_type='image/gif'
+        )
 
         form_data = {
             'text': 'Новый отредактированный текст поста',
-            'group': new_group.id
+            'group': new_group.id,
+            'image': uploaded
         }
 
         response = self.authorized_author.post(
@@ -210,3 +218,4 @@ class TestCreateEditPostForm(TestCase):
         self.assertEqual(
             edited_post.author, TestCreateEditPostForm.user_author
         )
+        self.assertEqual(edited_post.image, form_data['image'])

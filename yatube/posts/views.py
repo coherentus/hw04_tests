@@ -66,7 +66,7 @@ def group_index(request):
 def new_post(request):
     """For post-obj create form, render and check it, then save model-obj."""
     # initialise PostForm() with 'None' if request.POST absent
-    form = PostForm(request.POST or None)
+    form = PostForm(request.POST or None, files=request.FILES or None)
 
     if form.is_valid():
         new_post = form.save(commit=False)
