@@ -5,8 +5,8 @@ from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, redirect, render
 
-from .forms import PostForm
-from .models import Group, Post, User
+from .forms import CommentForm, PostForm
+from .models import Comment, Group, Post, User
 
 
 def page_not_found(request, exception):
@@ -111,3 +111,20 @@ def post_edit(request, username, post_id):
 
     return render(request, 'posts/new_post.html',
                   {'form': form, 'edit_flag': True})
+
+
+@login_required
+def add_comment(request, username, post_id):
+    post = get_object_or_404(Post, author__username=username, id=post_id)
+    form = CommentForm(request.POST or None)
+
+    if form.is_valid():
+        new_comment = form.save(commit=False)
+        new_comment.author = request.user
+        new_comment.post = request.post
+        new_comment.save()
+        return redirect('post', username=post.author.username,
+                        post_id=post_id)
+    comments = Comment.objects.all()
+    return render(request, 'posts/post.html',
+                  {'form': form, 'comments': comments})

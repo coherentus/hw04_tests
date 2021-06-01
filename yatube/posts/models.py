@@ -60,3 +60,29 @@ class Post(models.Model):
 
     def __str__(self):
         return self.text[:15]
+
+
+class Comment(models.Model):
+    post = models.ForeignKey(
+        Post, on_delete=models.CASCADE,
+        related_name='comments', verbose_name='Комментируемая запись'
+    )
+    author = models.ForeignKey(
+        User, on_delete=models.CASCADE,
+        related_name='comments', verbose_name='Автор комментария'
+    )
+    text = models.TextField(
+        verbose_name='Текст комментария'
+    )
+    created = models.DateTimeField(
+        verbose_name='Датаи и время комметария',
+        auto_now_add=True
+    )
+
+    class Meta:
+        ordering = ('-created',)
+        verbose_name = 'Комментарий'
+        verbose_name_plural = 'Комментарии'
+
+    def __str__(self):
+        return f'{self.author.username[:15]} {self.text[:20]}'
