@@ -91,8 +91,11 @@ def profile(request, username):
 
 def post_view(request, username, post_id):
     post = get_object_or_404(Post, author__username=username, id=post_id)
+    # comments = post.comments.all()
     return render(request, 'posts/post.html',
-                  {'post': post, 'author': post.author})
+                  {'post': post, 'author': post.author,
+                   'comments': post.comments.all()}
+            )
 
 
 @login_required
@@ -124,7 +127,7 @@ def add_comment(request, username, post_id):
         new_comment.post = request.post
         new_comment.save()
         return redirect('post', username=post.author.username,
-                        post_id=post_id)
-    comments = Comment.objects.all()
+                        post_id=post_id, comments=post.comments.all())
+    """comments = Comment.objects.all()"""
     return render(request, 'posts/post.html',
-                  {'form': form, 'comments': comments})
+                  {'form': form, 'comments': post.comments.all()})
