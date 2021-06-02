@@ -1,6 +1,6 @@
 {% extends "base.html" %}
-{% block title %}Записи подборки {{ group.title }}{% endblock %}
-{% block header %}{{ group.title }}{% endblock %}
+{% block title %}Подписки пользователя{% endblock %}
+{% block header %}Подписки пользователя{% endblock %}
 {% block content %}
 
   <div class="container">
@@ -14,4 +14,4 @@
   <!-- Вывод паджинатора -->
   {% include "includes/paginator.html" with items=page paginator=paginator%}
 
-{% endblock %}
+{% endblock %} 

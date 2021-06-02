@@ -6,7 +6,7 @@
       <div class="card">
         <div class="card-header">Подборки записей</div>
         <div class="card-body">
-          {% for group in groups %}
+          {% for group in page %}
             <p><b><a href="{% url 'group' slug=group.slug %}">{{ group.title }}</a></b></p>
             <p>{{ group.description }}</p>
             {% if not forloop.last %}

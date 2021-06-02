@@ -8,13 +8,12 @@
       <h5 class="card-header">Добавить комментарий:</h5>
       <div class="card-body">
         <div class="form-group">
-          <textarea> </textarea>
-          {{ form.text }}  <!---|addclass:"form-control"-->
+          {{ form.text|addclass:"form-control" }}  <!---|addclass:"form-control"-->
           {% if form.text.help_text %}
-                    <small id="{{ field.id_for_label }}-help" class="form-text text-muted">
-                      {{ field.help_text|safe }}
-                    </small>
-                  {% endif %}
+            <small id="{{ field.id_for_label }}-help" class="form-text text-muted">
+              {{ field.help_text|safe }}
+            </small>
+          {% endif %}
           
         </div>
         <button type="submit" class="btn btn-primary">Отправить</button>
@@ -24,7 +23,7 @@
 {% endif %}
 
 <!-- Комментарии -->
-Комментарии  {{ 'comments =' }}
+Комментарии  {{ 'comments comments.html=' }}
 
 {% for item in comments %}
   <div class="media card mb-4">

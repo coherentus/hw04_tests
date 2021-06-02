@@ -44,7 +44,7 @@
             </a>
             {{ post.text|linebreaksbr }}
           </p>
-          Комментарии  {{ 'comments =' }}
+          Комментарии  {{ 'comments =' }} {{ comments }}
           {% include "includes/comments.html" with comments=comments %}
           <div class="d-flex justify-content-between align-items-center">
             <div class="btn-group">
