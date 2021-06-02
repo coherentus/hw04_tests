@@ -85,8 +85,8 @@ def profile(request, username):
     user_posts = profile_user.posts.all()
     page = pagination(request, user_posts)
     
-    follow_flag = True
-    if profile_user.following == request.user:
+    follow_flag = False
+    if profile_user.following == request.user.username:
         follow_flag = True
     
     return render(request, 'posts/profile.html',
