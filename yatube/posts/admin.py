@@ -24,9 +24,9 @@ class CommentAdmin(admin.ModelAdmin):
 
 
 class FollowAdmin(admin.ModelAdmin):
-    list_display = ('pk', 'follower', 'author')
-    search_fields = ('follower', 'author')
-    list_filter = ('follower',)
+    list_display = ('pk', 'user', 'author')
+    search_fields = ('user', 'author')
+    list_filter = ('user',)
 
 
 admin.site.register(Post, PostAdmin)
