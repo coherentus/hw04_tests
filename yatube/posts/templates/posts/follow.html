@@ -4,14 +4,14 @@
 {% block content %}
 
   <div class="container">
-    <!-- Вывод ленты записей -->
+    {% include "includes/menu.html" with index=False %}
     {% for post in page %}
       <!-- Вот он, новый include! -->
       {% include "includes/post_item.html" with post=post %}
     {% endfor %}
   </div>
 
-  <!-- Вывод паджинатора -->
-  {% include "includes/paginator.html" with items=page paginator=paginator%}
+
+  {% include "includes/paginator.html" with items=page paginator=paginator %}
 
 {% endblock %} 
