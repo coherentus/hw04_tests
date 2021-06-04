@@ -86,7 +86,7 @@ def profile(request, username):
     page = pagination(request, user_posts)
 
     follow_flag = False
-    if profile_user.following == request.user.username:
+    if Follow.objects.filter(user=request.user, author=profile_user).exists():
         follow_flag = True
 
     return render(request, 'posts/profile.html',
@@ -96,7 +96,8 @@ def profile(request, username):
 
 def post_view(request, username, post_id):
     post = get_object_or_404(Post, author__username=username, id=post_id)
-    form = CommentForm(request.POST or None)
+    if request.user.is_authenticated:
+        form = CommentForm(request.POST or None)
     return render(request, 'posts/post.html',
                   {'post': post,
                    'form': form,
@@ -170,7 +171,7 @@ def follow_index(request):
 def profile_follow(request, username):
     profile_user = get_object_or_404(User, username=username)
     if request.user != profile_user:
-        if  not Follow.objects.filter(user=request.user).filter(author=profile_user).exists:
+        if not Follow.objects.filter(user=request.user).filter(author=profile_user).exists():
             Follow.objects.create(user=request.user, author=profile_user)
     return redirect('profile', username=username)
 

@@ -14,6 +14,10 @@
       </a>
       {{ post.text|linebreaksbr }}
     </p>
+    <div class="container text-right">
+      <!-- Дата публикации поста -->
+      <small class="text-muted">{{ post.pub_date|date:"d M Y" }}</small>
+  </div>
 
     <!-- Если пост относится к какому-нибудь сообществу, то отобразим ссылку на него через # -->
     {% if post.group %}
@@ -30,9 +34,11 @@
             Комментариев: {{ post.comments.count }}&nbsp&nbsp
           </div>
         {% endif %}
-        <a class="btn btn-sm btn-primary" href="{% url 'post' post.author.username post.id %}" role="button">
-          Добавить комментарий
-        </a>
+        {% if user.is_authenticated %}
+          <a class="btn btn-sm btn-primary" href="{% url 'post' post.author.username post.id %}" role="button">
+            Добавить комментарий
+          </a>
+        {% endif %}
 
         <!-- Ссылка на редактирование поста для автора -->
         {% if user == post.author %}
@@ -42,8 +48,7 @@
         {% endif %}
       </div>
 
-      <!-- Дата публикации поста -->
-      <small class="text-muted">{{ post.pub_date }}</small>
+      
     </div>
   </div>
 </div> 
