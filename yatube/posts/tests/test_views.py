@@ -20,8 +20,6 @@ class URLPathTemplatesTests(TestCase):
     '<str:username>/'                       posts/profile.html
     '<str:username>/<int:post_id>/'         posts/post.html
     '<str:username>/<int:post_id>/edit/'    posts/new_post.html
-    '/about/author/'                        about/author.html
-    '/about/tech/'                          about/tech.html
     """
 
     @classmethod
