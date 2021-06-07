@@ -136,38 +136,17 @@ def add_comment(request, username, post_id):
         new_comment.save()
     return redirect('post', username=post.author.username,
                     post_id=post.id)
-    """return render(request, 'posts/post.html',
-                  {'post': post,
-                   'form': form,
-                   'comments': post.comments.all()})"""
 
 
 @login_required
 def follow_index(request):
-    post_all = Post.objects.all()
-    following = request.user.following.all()
-    page = pagination(request, post_all)
+    posts_list = Post.objects.filter(author__following__user=request.user)
+    page = pagination(request, posts_list)
     return render(
         request,
         'posts/follow.html',
         {'page': page},
     )
-
-
-
-
-
-    """authors_list = User.folowing.all()
-    post_list = Post.objects.filter(author=authors_list)
-    follow_flag = False
-    if profile_user.following == request.user.username:
-        follow_flag = True
-    page = pagination(request, post_list)
-    return render(
-        request,
-        'posts/follow.html',
-        {'page': page, 'following': follow_flag},
-    )"""
 
 
 @login_required

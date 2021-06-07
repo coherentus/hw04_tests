@@ -195,7 +195,7 @@ class ViewsContextTests(TestCase):
         self.assertIn('author', response.context)
         user_in_db = ViewsContextTests.user_test
         user_in_context = response.context['author']
-        self.assertEqual(user_in_context, user_in_db)
+        self.assertEqual(user_in_context, user_in_db.username)
 
     def test_new_post_put_in_render_right_context(self):
         """Проверка, что "new_post" выдаёт в шаблон верный контекст.

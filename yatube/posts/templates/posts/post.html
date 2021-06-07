@@ -45,7 +45,6 @@
             {{ post.text|linebreaksbr }}
           </p>
           <div class="container text-right">
-            <!-- Дата публикации поста -->
             <small class="text-muted">{{ post.pub_date|date:"d M Y" }}</small>
           </div>
           {% include "includes/comments.html" with comments=comments %}
@@ -56,8 +55,7 @@
                   Редактировать
                 </a>
               {% endif %}
-            </div>
-            
+            </div>            
           </div>
         </div>
       </div>
