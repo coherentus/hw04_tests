@@ -87,8 +87,8 @@ def profile(request, username):
 
     follow_flag = False
     if ((request.user.is_authenticated) and
-        Follow.objects.filter(user=request.user, author=profile_user).exists()    
-    ):
+        Follow.objects.filter(
+            user=request.user, author=profile_user).exists()):
         follow_flag = True
 
     return render(request, 'posts/profile.html',
@@ -164,6 +164,7 @@ def profile_follow(request, username):
 @login_required
 def profile_unfollow(request, username):
     profile_user = get_object_or_404(User, username=username)
-    if Follow.objects.filter(user=request.user).filter(author=profile_user).exists():
+    if Follow.objects.filter(user=request.user,
+                             author=profile_user).exists():
         Follow.objects.get(user=request.user, author=profile_user).delete()
     return redirect('profile', username=username)
