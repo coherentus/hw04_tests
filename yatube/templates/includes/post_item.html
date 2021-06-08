@@ -26,7 +26,7 @@
             Комментариев: {{ post.comments.count }}&nbsp&nbsp
           </div>
         {% endif %}        
-        <a class="btn btn-sm btn-primary" href="{% url 'post' post.author.username post.id %}" role="button">
+        <a class="btn btn-sm btn-primary" href="{% url 'add_comment' post.author.username post.id %}" role="button">
           Добавить комментарий
         </a>
 

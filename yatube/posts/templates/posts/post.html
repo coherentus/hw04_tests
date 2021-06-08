@@ -50,8 +50,8 @@
           {% include "includes/comments.html" with comments=comments %}
           <div class="d-flex justify-content-between align-items-center">
             <div class="btn-group">
-              {% if user == author %}
-                <a class="btn btn-sm text-muted" href="{% url 'post_edit' username=post.author.username post_id=post.id %}" role="button">
+              {% if user == post.author %}
+                <a class="btn btn-sm btn-info" href="{% url 'post_edit' username=post.author.username post_id=post.id %}" role="button">
                   Редактировать
                 </a>
               {% endif %}

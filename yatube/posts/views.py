@@ -3,8 +3,8 @@ from http import HTTPStatus
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
-from django.shortcuts import (get_list_or_404, get_object_or_404, redirect,
-                              render)
+from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.cache import cache_page
 
 from .forms import CommentForm, PostForm
 from .models import Follow, Group, Post, User
@@ -86,8 +86,8 @@ def profile(request, username):
     page = pagination(request, user_posts)
 
     follow_flag = False
-    if ((request.user.is_authenticated) and
-        Follow.objects.filter(
+    if ((request.user.is_authenticated)
+        and Follow.objects.filter(
             user=request.user, author=profile_user).exists()):
         follow_flag = True
 
@@ -98,11 +98,10 @@ def profile(request, username):
 
 def post_view(request, username, post_id):
     post = get_object_or_404(Post, author__username=username, id=post_id)
-    # if request.user.is_authenticated:
     form = CommentForm(request.POST or None)
     return render(request, 'posts/post.html',
                   {'post': post,
-                   'author': post.author.username,
+                   # 'author': post.author.username,
                    'form': form,
                    'comments': post.comments.all()})
 
@@ -152,11 +151,9 @@ def follow_index(request):
 @login_required
 def profile_follow(request, username):
     profile_user = get_object_or_404(User, username=username)
-    if (
-        (request.user != profile_user) and
-        (not Follow.objects.filter(user=request.user,
-                                   author=profile_user).exists())
-    ):
+    if ((request.user != profile_user)
+        and (not Follow.objects.filter(
+            user=request.user, author=profile_user).exists())):
         Follow.objects.create(user=request.user, author=profile_user)
     return redirect('profile', username=username)
 

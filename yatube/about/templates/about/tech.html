@@ -1,58 +1,61 @@
 {% extends "base.html" %}
-{% block title %}О технологиях проекта{% endblock %}
-{% block content %}
-  <div class="row">
-    <div class="col-md-3 mb-3 mt-1">
-      <div class="card">
-        <div class="card-body">
-          <ul class="list-group list-group-flush">
-            <li class="list-group-item">
-              <div class="h4">
-                О технологиях
-              </div> 
-            </li>
-            <li class="list-group-item">
-              <div class="h6 text-muted">
-                <p><a href="https://www.python.org/" title="Официальный сайт Python" target="_blank">Python</a> v. 3.7.9</p>
-                <p><a href="https://www.djangoproject.com/" title="Официальный сайт Django" target="_blank">Django</a> v.  2.2.6</p>
-                <p><a href="https://git-scm.com/" title="Официальный сайт Git" target="_blank">Git</a> v. 2.31.1</p>
-                <p><a href="https://slack.com/" title="Официальный сайт Slack" target="_blank">Slack</a> v. 4.16.1</p>
-                <p><a href="https://code.visualstudio.com/" title="Официальный сайт VisualStudioCode" target="_blank">VisualStudioCode</a> v.&nbsp;1.56.1</p>
-                <p>Brain</p>                  
-              </div>
-            </li>
-          </ul>                                               
-        </div>                    
-      </div>                
-    </div>
-    <div class="col-md-9">
-      <div class="card-body">                    
-        <div class="card-text">
-          <h4>Технологии и инструменты, использованные для построения проекта.</h4>
-          <p><b>Python.</b> В представлении не нуждается.
-            С одной стороны простой, но строгий синтаксис,
-            а с другой - невероятные возможности. Как говорится, попробуйте сами!
-          </p>
-          <p><b>Django.</b> WEB-фреймворк. Писан на Python, интегрирован с Python.
-            Находится в постоянной доработке и усовершенствовании силами многих разработчиков.
-          </p>
-          <p><b>Git.</b> Весьма продвинутая и хорошо себя зарекомендовавшая система для
-            коллективной разработки проектов, в том числе, непомерно раздутых.
-          </p>
-          <p><b>VisualStudioCode.</b> Многофункциональный инструмент для разработки. 
-            Знает много языков. Имеет систему плагинов. 
-          </p>
-          <h5>Вспомогательные явления и техники, привлечённые во время работы над проектом.</h5>
-          <p><b>Slack.</b> Всемирно известный мессенджер, имеющий некоторые средства 
-            для оперативного и наглядного обмена визуальной и текстовой информацией, 
-            позволяет достаточно эффективно общаться небольшим командам разработчиков.
-          </p>
-          <p><b>Brain.</b> В одном коротеньком слове сокрыты все остальные техники, навыки и способности, 
-            с помощью которых удалось применить всё вышеперечисленное, осмыслить требования заказчика 
-            и опубликовать этот проект.
-          </p>
-        </div>                    
-      </div>                
-    </div>            
-  </div>        
-{% endblock %} 
+{% load cache %}
+{% cache 6000 tech %}
+  {% block title %}О технологиях проекта{% endblock %}
+  {% block content %}
+    <div class="row">
+      <div class="col-md-3 mb-3 mt-1">
+        <div class="card">
+          <div class="card-body">
+            <ul class="list-group list-group-flush">
+              <li class="list-group-item">
+                <div class="h4">
+                  О технологиях
+                </div> 
+              </li>
+              <li class="list-group-item">
+                <div class="h6 text-muted">
+                  <p><a href="https://www.python.org/" title="Официальный сайт Python" target="_blank">Python</a> v. 3.7.9</p>
+                  <p><a href="https://www.djangoproject.com/" title="Официальный сайт Django" target="_blank">Django</a> v.  2.2.6</p>
+                  <p><a href="https://git-scm.com/" title="Официальный сайт Git" target="_blank">Git</a> v. 2.31.1</p>
+                  <p><a href="https://slack.com/" title="Официальный сайт Slack" target="_blank">Slack</a> v. 4.16.1</p>
+                  <p><a href="https://code.visualstudio.com/" title="Официальный сайт VisualStudioCode" target="_blank">VisualStudioCode</a> v.&nbsp;1.56.1</p>
+                  <p>Brain</p>                  
+                </div>
+              </li>
+            </ul>                                               
+          </div>                    
+        </div>                
+      </div>
+      <div class="col-md-9">
+        <div class="card-body">                    
+          <div class="card-text">
+            <h4>Технологии и инструменты, использованные для построения проекта.</h4>
+            <p><b>Python.</b> В представлении не нуждается.
+              С одной стороны простой, но строгий синтаксис,
+              а с другой - невероятные возможности. Как говорится, попробуйте сами!
+            </p>
+            <p><b>Django.</b> WEB-фреймворк. Писан на Python, интегрирован с Python.
+              Находится в постоянной доработке и усовершенствовании силами многих разработчиков.
+            </p>
+            <p><b>Git.</b> Весьма продвинутая и хорошо себя зарекомендовавшая система для
+              коллективной разработки проектов, в том числе, непомерно раздутых.
+            </p>
+            <p><b>VisualStudioCode.</b> Многофункциональный инструмент для разработки. 
+              Знает много языков. Имеет систему плагинов. 
+            </p>
+            <h5>Вспомогательные явления и техники, привлечённые во время работы над проектом.</h5>
+            <p><b>Slack.</b> Всемирно известный мессенджер, имеющий некоторые средства 
+              для оперативного и наглядного обмена визуальной и текстовой информацией, 
+              позволяет достаточно эффективно общаться небольшим командам разработчиков.
+            </p>
+            <p><b>Brain.</b> В одном коротеньком слове сокрыты все остальные техники, навыки и способности, 
+              с помощью которых удалось применить всё вышеперечисленное, осмыслить требования заказчика 
+              и опубликовать этот проект.
+            </p>
+          </div>                    
+        </div>                
+      </div>            
+    </div>        
+  {% endblock %} 
+{% endcache %}
